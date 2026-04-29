@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRD — Untitled PRD</title>
+<style>
+  :root { color-scheme: dark light; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: #0b0f19; color: #e2e8f0;
+    display: grid; grid-template-columns: 280px 1fr; min-height: 100vh;
+  }
+  @media (prefers-color-scheme: light) {
+    body { background: #f8fafc; color: #0f172a; }
+    aside { background: #eef2f7 !important; border-right-color: #cbd5e1 !important; }
+    main code { background: #e2e8f0 !important; }
+    main pre { background: #0f172a !important; }
+    .meta-row { color: #475569 !important; }
+    .toc a { color: #334155 !important; }
+    .toc a:hover { background: #dbeafe !important; color: #1e40af !important; }
+    table { border-color: #cbd5e1 !important; }
+    th, td { border-color: #cbd5e1 !important; }
+    th { background: #e2e8f0 !important; }
+    blockquote { border-left-color: #94a3b8 !important; color: #475569 !important; }
+    hr { border-color: #cbd5e1 !important; }
+  }
+  @media (max-width: 820px) {
+    body { grid-template-columns: 1fr; }
+    aside { position: static !important; height: auto !important; border-right: 0 !important; border-bottom: 1px solid #1e293b; }
+    main { padding: 24px 20px !important; }
+  }
+  aside {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    background: #0f172a; border-right: 1px solid #1e293b; padding: 24px 18px;
+  }
+  aside h1 { font-size: 16px; margin: 0 0 10px; line-height: 1.3; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #fff; }
+  .badge-effort { background: #334155; }
+  .progress { margin: 8px 0 16px; }
+  .progress-track { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #22c55e); transition: width 0.3s; }
+  .progress-label { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; justify-content: space-between; }
+  .meta-row { font-size: 11px; color: #64748b; margin: 2px 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .toc { margin-top: 16px; border-top: 1px solid #1e293b; padding-top: 14px; }
+  .toc-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 8px; }
+  .toc a { display: block; padding: 4px 8px; color: #cbd5e1; text-decoration: none; border-radius: 4px; font-size: 13px; margin: 2px 0; }
+  .toc a:hover { background: #1e293b; color: #fff; }
+  .toc-l3 { padding-left: 20px !important; font-size: 12px !important; color: #94a3b8 !important; }
+  main { padding: 40px 48px 80px; max-width: 920px; }
+  main h1 { font-size: 28px; margin: 0 0 8px; }
+  main h2 { font-size: 22px; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #1e293b; }
+  main h3 { font-size: 17px; margin: 24px 0 8px; color: #06b6d4; }
+  main h4 { font-size: 14px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+  main p { margin: 10px 0; }
+  main ul, main ol { padding-left: 22px; margin: 8px 0; }
+  main li { margin: 4px 0; }
+  main code { background: #1e293b; padding: 2px 6px; border-radius: 3px; font-size: 13px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  main pre { background: #020617; padding: 14px 18px; border-radius: 6px; overflow-x: auto; border: 1px solid #1e293b; margin: 14px 0; }
+  main pre code { background: transparent; padding: 0; font-size: 12.5px; line-height: 1.5; }
+  table { border-collapse: collapse; margin: 14px 0; border: 1px solid #1e293b; font-size: 13.5px; }
+  th, td { padding: 8px 12px; border: 1px solid #1e293b; text-align: left; vertical-align: top; }
+  th { background: #0f172a; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  blockquote { border-left: 3px solid #334155; padding: 2px 14px; margin: 12px 0; color: #94a3b8; }
+  a { color: #38bdf8; }
+  a:hover { text-decoration: underline; }
+  hr { border: 0; border-top: 1px solid #1e293b; margin: 24px 0; }
+  .cb { display: inline-block; width: 16px; height: 16px; text-align: center; line-height: 16px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-right: 4px; vertical-align: middle; }
+  .cb-x { background: #22c55e; color: #052e16; }
+  .cb-o { background: #1e293b; color: #475569; }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Untitled PRD</h1>
+  <div class="badges">
+    <span class="badge" style="background:#64748b">observe</span>
+    <span class="badge badge-effort">standard</span>
+    
+  </div>
+  <div class="progress">
+    <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label"><span>0/0</span><span>0%</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <a class="toc-l2" href="#table-of-contents">Table of Contents</a>
+<a class="toc-l2" href="#1-overview">1. Overview</a>
+<a class="toc-l2" href="#2-goals-and-non-goals">2. Goals and Non-Goals</a>
+<a class="toc-l3" href="#2-1-goals">2.1 Goals</a>
+<a class="toc-l3" href="#2-2-non-goals">2.2 Non-Goals</a>
+<a class="toc-l2" href="#3-background-and-prior-art">3. Background and Prior Art</a>
+<a class="toc-l3" href="#3-1-pytapo">3.1 pytapo</a>
+<a class="toc-l3" href="#3-2-onvif-zeep-async">3.2 onvif-zeep-async</a>
+<a class="toc-l3" href="#3-3-homeassistant-tapo-control">3.3 HomeAssistant-Tapo-Control</a>
+<a class="toc-l3" href="#3-3-1-capability-matrix-per-feature-per-model">3.3.1 Capability matrix (per-feature × per-model)</a>
+<a class="toc-l3" href="#3-4-wsdiscovery">3.4 WSDiscovery</a>
+<a class="toc-l3" href="#3-5-other-prior-art-informative">3.5 Other prior art (informative)</a>
+<a class="toc-l3" href="#3-6-why-a-thin-custom-cli-is-justified">3.6 Why a thin custom CLI is justified</a>
+<a class="toc-l2" href="#4-architecture-decision-wrap-vs-reimplement">4. Architecture Decision: Wrap vs Reimplement</a>
+<a class="toc-l3" href="#4-1-decision">4.1 Decision</a>
+<a class="toc-l3" href="#4-2-rationale">4.2 Rationale</a>
+<a class="toc-l3" href="#4-3-why-three-libraries-not-one">4.3 Why three libraries, not one</a>
+<a class="toc-l3" href="#4-4-implementation-language">4.4 Implementation language</a>
+<a class="toc-l3" href="#4-5-considered-alternative-reimplement-in-typescript">4.5 Considered alternative: reimplement in TypeScript</a>
+<a class="toc-l3" href="#4-6-considered-alternative-pure-onvif-no-pytapo">4.6 Considered alternative: pure ONVIF (no pytapo)</a>
+<a class="toc-l2" href="#5-functional-requirements">5. Functional Requirements</a>
+<a class="toc-l3" href="#5-1-discovery">5.1 Discovery</a>
+<a class="toc-l3" href="#5-2-listing">5.2 Listing</a>
+<a class="toc-l3" href="#5-3-info">5.3 Info</a>
+<a class="toc-l3" href="#5-4-snapshot">5.4 Snapshot</a>
+<a class="toc-l3" href="#5-5-stream">5.5 Stream</a>
+<a class="toc-l3" href="#5-6-record-subprocess">5.6 Record (Subprocess)</a>
+<a class="toc-l3" href="#5-7-ptz">5.7 PTZ</a>
+<a class="toc-l3" href="#5-8-presets">5.8 Presets</a>
+<a class="toc-l3" href="#5-9-motion-detection">5.9 Motion Detection</a>
+<a class="toc-l3" href="#5-10-alarm">5.10 Alarm</a>
+<a class="toc-l3" href="#5-11-led-privacy-night-vision">5.11 LED, Privacy, Night Vision</a>
+<a class="toc-l3" href="#5-12-audio">5.12 Audio</a>
+<a class="toc-l3" href="#5-13-osd-on-screen-display">5.13 OSD (On-Screen Display)</a>
+<a class="toc-l3" href="#5-14-reboot-and-set">5.14 Reboot and Set</a>
+<a class="toc-l3" href="#5-15-groups">5.15 Groups</a>
+<a class="toc-l3" href="#5-16-batch">5.16 Batch</a>
+<a class="toc-l3" href="#5-17-output-formats">5.17 Output Formats</a>
+<a class="toc-l3" href="#5-18-error-handling">5.18 Error Handling</a>
+<a class="toc-l3" href="#5-19-configuration-resolution">5.19 Configuration Resolution</a>
+<a class="toc-l3" href="#5-20-auth-migration">5.20 Auth migration</a>
+<a class="toc-l2" href="#6-authentication-and-credentials">6. Authentication and Credentials</a>
+<a class="toc-l3" href="#6-1-the-dual-credential-reality">6.1 The dual-credential reality</a>
+<a class="toc-l3" href="#6-2-credential-sources-in-resolution-order-control-plane">6.2 Credential sources (in resolution order, control plane)</a>
+<a class="toc-l3" href="#6-3-credentials-file-format-cloud-account">6.3 Credentials file format (cloud account)</a>
+<a class="toc-l3" href="#6-4-camera-account-file-format-per-device">6.4 Camera-account file format (per-device)</a>
+<a class="toc-l3" href="#6-5-pytapo-session-caching">6.5 pytapo session caching</a>
+<a class="toc-l3" href="#6-6-auth-status">6.6 `auth status`</a>
+<a class="toc-l3" href="#6-7-credential-source-flag">6.7 `--credential-source` flag</a>
+<a class="toc-l3" href="#6-8-pytapo-authentication-variants-informative">6.8 pytapo authentication variants (informative)</a>
+<a class="toc-l3" href="#6-9-config-show-redaction-informative">6.9 `config show` redaction (informative)</a>
+<a class="toc-l2" href="#7-non-functional-requirements">7. Non-Functional Requirements</a>
+<a class="toc-l3" href="#7-1-performance">7.1 Performance</a>
+<a class="toc-l3" href="#7-2-determinism">7.2 Determinism</a>
+<a class="toc-l3" href="#7-3-observability">7.3 Observability</a>
+<a class="toc-l3" href="#7-4-portability">7.4 Portability</a>
+<a class="toc-l3" href="#7-5-network-model">7.5 Network model</a>
+<a class="toc-l2" href="#8-cli-surface">8. CLI Surface</a>
+<a class="toc-l3" href="#8-1-verb-summary">8.1 Verb summary</a>
+<a class="toc-l3" href="#8-2-target-syntax">8.2 Target syntax</a>
+<a class="toc-l3" href="#8-3-common-flags">8.3 Common flags</a>
+<a class="toc-l3" href="#8-4-worked-examples">8.4 Worked examples</a>
+<a class="toc-l2" href="#9-configuration-file">9. Configuration File</a>
+<a class="toc-l3" href="#9-1-location-and-format">9.1 Location and format</a>
+<a class="toc-l3" href="#9-2-schema">9.2 Schema</a>
+<a class="toc-l3" href="#9-3-complete-example">9.3 Complete example</a>
+<a class="toc-l3" href="#9-4-config-validation">9.4 Config validation</a>
+<a class="toc-l2" href="#10-data-model">10. Data Model</a>
+<a class="toc-l3" href="#10-1-camera">10.1 Camera</a>
+<a class="toc-l3" href="#10-2-stream">10.2 Stream</a>
+<a class="toc-l3" href="#10-3-motionevent">10.3 MotionEvent</a>
+<a class="toc-l3" href="#10-4-preset">10.4 Preset</a>
+<a class="toc-l3" href="#10-5-sessionmetadata-cache">10.5 SessionMetadata (cache)</a>
+<a class="toc-l2" href="#11-error-model-and-exit-codes">11. Error Model and Exit Codes</a>
+<a class="toc-l3" href="#11-1-exit-code-table">11.1 Exit code table</a>
+<a class="toc-l3" href="#11-2-structured-error-object-stderr">11.2 Structured error object (stderr)</a>
+<a class="toc-l2" href="#12-testing-strategy">12. Testing Strategy</a>
+<a class="toc-l3" href="#12-1-unit-tests">12.1 Unit tests</a>
+<a class="toc-l3" href="#12-2-integration-tests">12.2 Integration tests</a>
+<a class="toc-l3" href="#12-3-fixture-corpus">12.3 Fixture corpus</a>
+<a class="toc-l2" href="#13-distribution-and-install">13. Distribution and Install</a>
+<a class="toc-l3" href="#13-1-recommended">13.1 Recommended</a>
+<a class="toc-l3" href="#13-2-alternatives-considered">13.2 Alternatives considered</a>
+<a class="toc-l3" href="#13-3-versioning">13.3 Versioning</a>
+<a class="toc-l2" href="#14-out-of-scope">14. Out of Scope</a>
+<a class="toc-l2" href="#15-resolved-decisions">15. Resolved Decisions</a>
+<a class="toc-l2" href="#16-phase-plan">16. Phase Plan</a>
+<a class="toc-l3" href="#16-0-phase-0-hardware-smoke-test-gate-3-days">16.0 Phase 0 — Hardware Smoke-Test Gate (3 days)</a>
+<a class="toc-l3" href="#16-1-phase-1-mvp-2-3-weeks">16.1 Phase 1 — MVP (2-3 weeks)</a>
+<a class="toc-l3" href="#16-2-phase-2-ptz-presets-alarm-audio-osd-1-2-weeks">16.2 Phase 2 — PTZ, Presets, Alarm, Audio, OSD (1-2 weeks)</a>
+<a class="toc-l3" href="#16-3-phase-3-recording-motion-history-groups-batch-sigterm-2">16.3 Phase 3 — Recording, Motion History, Groups, Batch, SIGTERM (2 weeks)</a>
+<a class="toc-l3" href="#16-4-phase-4-reserved-no-commitment">16.4 Phase 4 — (Reserved, no commitment)</a>
+<a class="toc-l2" href="#17-revision-history">17. Revision History</a>
+<a class="toc-l3" href="#v1-1-1-2026-04-28-cloud-credentials-shared-with-kasa-cli">v1.1.1 — 2026-04-28 — Cloud credentials shared with kasa-cli</a>
+<a class="toc-l3" href="#v1-1-0-2026-04-28-reviewer-feedback-applied">v1.1.0 — 2026-04-28 — Reviewer feedback applied</a>
+<a class="toc-l3" href="#deferred-to-backlog-intentional-with-rationale">Deferred to backlog (intentional, with rationale)</a>
+<a class="toc-l3" href="#v1-0-0-2026-04-28-initial-draft">v1.0.0 — 2026-04-28 — Initial draft</a>
+  </div>
+</aside>
+<main>
+<h1 id="software-requirements-document-tapo-cli">Software Requirements Document: tapo-cli</h1>
+<p><strong>Document ID:</strong> SRD-TAPO-CLI-001 <strong>Version:</strong> 1.1.1 <strong>Date:</strong> 2026-04-28 <strong>Status:</strong> Draft v1.1.1 — Cloud credentials shared with kasa-cli <strong>Author:</strong> Dan Elliott <strong>Source:</strong> Derived from user requirements + verified pytapo 3.4.13 (PyPI, released 2026-04-14), onvif-zeep-async 4.0.4 (PyPI, released 2025-08-20), WSDiscovery 2.1.2 (PyPI, released 2025-01-24), and HomeAssistant-Tapo-Control feature inventory (GitHub) as of 2026-04-28. v1.1.0 incorporates Architect / Engineer / Researcher review findings — see §17 Revision History.</p>
+<p>---</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<p>1. <a href="#1-overview" target="_blank" rel="noopener">Overview</a> 2. <a href="#2-goals-and-non-goals" target="_blank" rel="noopener">Goals and Non-Goals</a> 3. <a href="#3-background-and-prior-art" target="_blank" rel="noopener">Background and Prior Art</a> 4. <a href="#4-architecture-decision-wrap-vs-reimplement" target="_blank" rel="noopener">Architecture Decision: Wrap vs Reimplement</a> 5. <a href="#5-functional-requirements" target="_blank" rel="noopener">Functional Requirements</a> 6. <a href="#6-authentication-and-credentials" target="_blank" rel="noopener">Authentication and Credentials</a> 7. <a href="#7-non-functional-requirements" target="_blank" rel="noopener">Non-Functional Requirements</a> 8. <a href="#8-cli-surface" target="_blank" rel="noopener">CLI Surface</a> 9. <a href="#9-configuration-file" target="_blank" rel="noopener">Configuration File</a> 10. <a href="#10-data-model" target="_blank" rel="noopener">Data Model</a> 11. <a href="#11-error-model-and-exit-codes" target="_blank" rel="noopener">Error Model and Exit Codes</a> 12. <a href="#12-testing-strategy" target="_blank" rel="noopener">Testing Strategy</a> 13. <a href="#13-distribution-and-install" target="_blank" rel="noopener">Distribution and Install</a> 14. <a href="#14-out-of-scope" target="_blank" rel="noopener">Out of Scope</a> 15. <a href="#15-resolved-decisions" target="_blank" rel="noopener">Resolved Decisions</a> 16. <a href="#16-phase-plan" target="_blank" rel="noopener">Phase Plan</a> 17. <a href="#17-revision-history" target="_blank" rel="noopener">Revision History</a></p>
+<p>---</p>
+<h2 id="1-overview">1. Overview</h2>
+<p><code>tapo-cli</code> is a deterministic, scriptable command-line tool for discovering, querying, and controlling TP-Link Tapo cameras and doorbells on the local LAN. It is the sister tool to <code>kasa-cli</code> — same product philosophy, different device family. It is not a video player, not a NVR, not a HomeKit bridge, not a cloud daemon, not an MQTT broker, not a rules engine, and not a GUI. It is a single binary that takes a verb, a target, and flags, performs one operation against one camera (or a group), prints a result on stdout — typically structured JSON or, for streams, a <code>rtsp://</code> URL — and exits with a meaningful status code. Its job is to be the leaf node in a shell pipeline, ffmpeg upstream, or cron job — nothing more.</p>
+<p>The CLI deliberately separates <strong>control</strong> (which uses pytapo and the TP-Link cloud-account credential) from <strong>media</strong> (which uses the camera's RTSP server and a separate "camera account" credential). Both seams are visible to the user, and both credentials are stored in chmod-0600 files local to the host.</p>
+<p>---</p>
+<h2 id="2-goals-and-non-goals">2. Goals and Non-Goals</h2>
+<h3 id="2-1-goals">2.1 Goals</h3>
+<ul>
+<li><strong>Discover</strong> Tapo cameras and doorbells on the local network using ONVIF WS-Discovery, with subnet-scan fallback for cameras whose ONVIF stack is disabled or quirky</li>
+<li><strong>Query</strong> device state (model, firmware, MAC, alias, on/off, motion-detection state, privacy-mode state, LED state)</li>
+<li><strong>Control</strong> non-media surfaces: PTZ (pan/tilt/zoom on PTZ-capable models), preset positions, motion detection, alarm/siren, status LED, privacy mode (lens cover), night-vision mode, on-screen-display overlay, audio volume, mic and speaker mute</li>
+<li><strong>Emit RTSP stream URLs</strong> for downstream consumption (<code>ffmpeg</code>, <code>mpv</code>, <code>ffplay</code>, NVR software). The CLI does NOT decode video itself</li>
+<li><strong>Pull a snapshot still image</strong> to a local file via a three-mechanism fallback chain (pytapo → ONVIF <code>GetSnapshotUri</code> → ffmpeg single-frame from RTSP)</li>
+<li><strong>Optionally record</strong> to a local file via the <code>record</code> verb that spawns ffmpeg as a foreground child process (the recording lives and dies with the CLI invocation; non-tty callers must specify <code>--duration</code> or <code>--max-bytes</code> per FR-13a)</li>
+<li><strong>Be scriptable</strong>: deterministic exit codes, JSON/JSONL output, no interactive prompts in non-tty mode</li>
+<li><strong>Group devices logically</strong> via local config (alias-to-IP map and group-to-alias-list map)</li>
+<li><strong>Run batch operations</strong> across multiple devices in parallel</li>
+<li><strong>Cache pytapo session state</strong> between invocations to avoid per-command re-auth latency</li>
+</ul>
+<h3 id="2-2-non-goals">2.2 Non-Goals</h3>
+<ul>
+<li><strong>No GUI.</strong> This is a CLI. Visual dashboards belong elsewhere.</li>
+<li><strong>No video display in the terminal.</strong> <code>stream</code> prints a URL. Decoding is the consumer's job.</li>
+<li><strong>No motion-event video clip downloads in v1.</strong> Vendor-specific binary protocols; pytapo has experimental support but it's brittle. Deferred.</li>
+<li><strong>No two-way real-time audio.</strong> Would require WebRTC or SIP. Out of scope at all phases of this SRD.</li>
+<li><strong>No NVR functionality.</strong> Long-running multi-day recording, retention policies, motion-triggered DVR — wrong tool. Use Frigate, Shinobi, or Synology Surveillance Station downstream of <code>tapo-cli stream</code>.</li>
+<li><strong>No scheduling daemon.</strong> Cron, systemd timers, and launchd handle scheduling. The CLI exposes a verb; the scheduler invokes it.</li>
+<li><strong>No cloud relay.</strong> Local LAN only. No port forwarding. No TP-Link cloud control plane (cloud-account credentials are used solely for on-LAN session derivation).</li>
+<li><strong>No automation rules engine.</strong> "If motion detected, turn on lights" is Home Assistant or Node-RED territory.</li>
+<li><strong>No Matter or Thread support.</strong> Tapo cameras don't speak either.</li>
+<li><strong>No Kasa-line support.</strong> Kasa plugs/bulbs/strips/switches are <code>kasa-cli</code>'s lane. This CLI does not encroach.</li>
+<li><strong>No battery-doorbell third-party integration.</strong> Tapo D210 and D235 in battery mode cannot accept a camera account (verified against HA-Tapo-Control discussions #739, #794). Wired/always-on operation only for <code>tapo-cli</code>.</li>
+<li><strong>No firmware updates.</strong> Use the Tapo app.</li>
+<li><strong>No Wi-Fi provisioning.</strong> Use the Tapo app.</li>
+</ul>
+<p>---</p>
+<h2 id="3-background-and-prior-art">3. Background and Prior Art</h2>
+<h3 id="3-1-pytapo">3.1 pytapo</h3>
+<p>The de-facto open-source library for Tapo camera control is <strong>pytapo</strong> (https://github.com/JurajNyiri/pytapo, https://pypi.org/project/pytapo/), latest stable <strong>3.4.13</strong> released <strong>2026-04-14</strong>, MIT-licensed, declared minimum Python <strong>3.13</strong> in package metadata (works on 3.11+ in practice; the 3.13 minimum is conservative). pytapo is a thin wrapper over the camera's HTTPS control plane. It supports:</p>
+<ul>
+<li><strong>Camera-account login</strong> (preferred; created in the Tapo app under Settings &gt; Advanced settings &gt; Camera account)</li>
+<li><strong>Cloud-account fallback login</strong> ("admin" username + TP-Link cloud password)</li>
+<li><strong>Stream URL retrieval</strong> (<code>getStreamURL()</code>)</li>
+<li><strong>PTZ control</strong> (move, calibrate, save/delete preset)</li>
+<li><strong>Privacy mode</strong> toggle</li>
+<li><strong>Motion detection</strong> enable/disable, sensitivity, recent-events query</li>
+<li><strong>Reboot</strong></li>
+<li><strong>Recordings</strong> download from on-camera SD card (requires ffmpeg subprocess for the stream conversion step)</li>
+<li><strong>LED, alarm/siren, night vision, OSD, audio volume</strong> — surface coverage varies by model</li>
+</ul>
+<p>pytapo's README explicitly does <strong>not</strong> enumerate supported models. The community-maintained Home Assistant integration (<code>HomeAssistant-Tapo-Control</code>, see §3.3) is the de-facto compatibility matrix.</p>
+<p><strong>Upstream cadence note.</strong> During the Home Assistant 2025.11.0 release window, the community HA-Tapo-Control integration was pinned to pytapo <strong>3.3.51</strong> and that exact pinned version became incompatible with shipping firmware — operators on HA 2025.11 + pytapo 3.3.51 saw auth break with no advance notice (HA-Tapo-Control issue #1099). The lesson is not "newer pytapo bad" — it is that single-maintainer libraries with firmware-coupled APIs require pinning to a known-good git SHA in this CLI, not a floating <code>&gt;=3.4.13</code> constraint.</p>
+<h3 id="3-2-onvif-zeep-async">3.2 onvif-zeep-async</h3>
+<p>The maintained ONVIF client for Python is <strong>onvif-zeep-async</strong> (https://pypi.org/project/onvif-zeep-async/), latest stable <strong>4.0.4</strong> released <strong>2025-08-20</strong>, MIT-licensed, Python 3.10+. Async-native, built on <code>zeep[async]&gt;=4.1.0</code> and <code>httpx</code>. The Home Assistant ecosystem standardized on this library over the abandoned <code>onvif-zeep</code> (last release 2018-08-20 — do not use for new work).</p>
+<p><code>tapo-cli</code> uses <code>onvif-zeep-async</code> for two purposes: 1. <strong>WS-Discovery</strong> of cameras on the LAN 2. <strong>Snapshot fallback</strong> via <code>GetSnapshotUri</code> when pytapo's snapshot path fails (model- or firmware-dependent)</p>
+<p>Tapo cameras advertise ONVIF Profile S (live streaming + snapshot) on most current models, but support is per-firmware and the user must enable "Tapo Lab &gt; Third-Party Compatibility" in the app on some firmware revisions. ONVIF support on doorbells is sparse and the CLI SHALL NOT depend on it for doorbell operations.</p>
+<h3 id="3-3-homeassistant-tapo-control">3.3 HomeAssistant-Tapo-Control</h3>
+<p>The community-maintained Home Assistant integration <code>HomeAssistant-Tapo-Control</code> (https://github.com/JurajNyiri/HomeAssistant-Tapo-Control) is the gold-standard feature reference for Tapo cameras. It is the wrong tool for shell scripting (requires a running HA instance), but its README enumerates supported models and capabilities, which <code>tapo-cli</code> adopts as the v1 device matrix:</p>
+<table><thead><tr><th>Family</th><th>Models verified by HA-Tapo-Control README (as of 2026-04-28)</th></tr></thead><tbody>
+<tr><td>Cameras (TC)</td><td>TC55, TC60, TC70, TC82, TC85</td></tr>
+<tr><td>Cameras (C, indoor)</td><td>C100, C110, C120, C125, C200, C201, C210, C211, C216, C220, C225, C236</td></tr>
+<tr><td>Cameras (C, outdoor)</td><td>C310, C320WS, C410, C420, C420S2, C500, C510W, C520WS, C530WS, C710, C720</td></tr>
+<tr><td>Doorbells</td><td>D100C, D210, D230, D235</td></tr>
+<tr><td>Cameras (current TP-Link catalog, <strong>untested in v1</strong>)</td><td>C402, C403, C460, C465, C560WS, C610, C615F, C645D, C660, C675D, TC53, TCW90</td></tr>
+</tbody></table>
+<p><strong>Disclaimer.</strong> The verified rows above are derived from the HA-Tapo-Control README as of 2026-04-28 — this is <strong>NOT</strong> equivalent to TP-Link's current product catalog. The "untested" row enumerates models advertised on TP-Link's current cloud-camera product page that have no third-party-integration data yet; their compatibility status is <strong>UNVERIFIED in v1</strong>. Legacy entries (C100/C200) are kept because they're widely deployed in the field even if absent from current sales pages.</p>
+<p>This combined list is the <strong>v1 supported set</strong> for warning purposes. Models not on it MAY work but are unsupported; the CLI SHALL NOT block unknown models, but <code>tapo-cli info</code> SHALL flag them with a <code>supported: false</code> field in JSON output and a stderr warning. Models on the "untested" row SHALL emit a <code>supported: untested</code> value with a stronger stderr warning recommending Phase 0 smoke-test (§16.0).</p>
+<h3 id="3-3-1-capability-matrix-per-feature-per-model">3.3.1 Capability matrix (per-feature × per-model)</h3>
+<p>The following matrix is the v1 contract for what <code>tapo-cli info</code> reports under <code>features</code> and what Phase 2 verbs (FR-31 privacy, FR-33 audio volume, FR-36 tts, FR-37 osd, FR-28 alarm trigger, FR-32 night-vision modes, FR-12b dual-lens stream, FR-14..17 ptz) check before issuing a request. A blank cell means <strong>unsupported on that model</strong> — verbs targeting it SHALL exit code 5 with a hint pointing at this matrix.</p>
+<table><thead><tr><th>Model</th><th>tts</th><th>osd</th><th>alarm-trigger</th><th>night-vision modes</th><th>audio-volume</th><th>dual-lens-stream</th><th>ptz-mode</th></tr></thead><tbody>
+<tr><td>C100</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>—</td><td>—</td><td>none</td></tr>
+<tr><td>C110</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>—</td><td>—</td><td>none</td></tr>
+<tr><td>C200</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>—</td><td>—</td><td>step</td></tr>
+<tr><td>C210</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>yes</td><td>—</td><td>step</td></tr>
+<tr><td>C220</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off/ir-only</td><td>yes</td><td>—</td><td>step</td></tr>
+<tr><td>C225</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off/ir-only</td><td>yes</td><td>yes (wide+telephoto)</td><td>continuous</td></tr>
+<tr><td>C320WS</td><td>—</td><td>yes</td><td>yes</td><td>auto/on/off/ir-only</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>C420 / C420S2</td><td>—</td><td>yes</td><td>yes</td><td>auto/on/off/ir-only</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>C520WS</td><td>yes</td><td>yes</td><td>yes</td><td>auto/on/off/ir-only</td><td>yes</td><td>—</td><td>step</td></tr>
+<tr><td>C530WS</td><td>yes</td><td>yes</td><td>yes</td><td>auto/on/off/ir-only</td><td>yes</td><td>—</td><td>step</td></tr>
+<tr><td>C710 / C720</td><td>—</td><td>yes</td><td>yes</td><td>auto/on/off</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>TC55 / TC60 / TC70 / TC82 / TC85</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>—</td><td>—</td><td>none</td></tr>
+<tr><td>D100C</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>D210 (wired)</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>D230</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td>D235 (wired)</td><td>—</td><td>yes</td><td>—</td><td>auto/on/off</td><td>yes</td><td>—</td><td>none</td></tr>
+<tr><td><strong>untested-row models</strong></td><td>unknown</td><td>unknown</td><td>unknown</td><td>unknown</td><td>unknown</td><td>unknown</td><td>unknown</td></tr>
+</tbody></table>
+<p><code>ptz-mode</code> values: <code>none</code> (no motors), <code>step</code> (discrete steps in device units), <code>continuous</code> (degrees-addressable). FR-14..17 use this to decide whether <code>--step</code> is interpreted as degrees or device-step-units (see §5.7).</p>
+<p>The matrix is intentionally a v1 floor — it captures what HA-Tapo-Control's README and pytapo's per-model branches confirm. The "untested-row" entries SHALL fall through to a Phase 0 smoke-test result before being added to a real row.</p>
+<h3 id="3-4-wsdiscovery">3.4 WSDiscovery</h3>
+<p>For the WS-Discovery path, <code>tapo-cli</code> uses the <strong>WSDiscovery</strong> Python library (https://pypi.org/project/WSDiscovery/), latest stable <strong>2.1.2</strong> released <strong>2025-01-24</strong>, Python 3.9-3.13 compatible. The author flags incompleteness ("not 100% complete and correct").</p>
+<p><strong>Multicast-drop is the dominant failure mode.</strong> WS-Discovery transports over multicast UDP (group 239.255.255.250, port 3702). Most consumer mesh routers — Eero, Google Nest Wifi, TP-Link Deco, Asus AiMesh — drop or fail to forward multicast across mesh nodes by default. Wi-Fi client-isolation (often enabled on guest networks and IoT-segregated SSIDs) silently swallows it on a single AP too. Even on flat enterprise networks, multi-NIC hosts (Wi-Fi + Tailscale + Docker bridges) frequently send the probe out the wrong interface. <strong>The empirical result is that WS-Discovery fails on more home networks than it succeeds on.</strong></p>
+<p>For this reason <code>tapo-cli</code> does <strong>NOT</strong> treat WS-Discovery as the primary path. WS-Discovery and a subnet TCP/443 probe-scan are co-equal primaries, both run in parallel by default, deduplicated by MAC then IP. See §5.1 for the discovery contract and the <code>--no-scan</code> / <code>--ws-discovery-only</code> opt-out flags.</p>
+<h3 id="3-5-other-prior-art-informative">3.5 Other prior art (informative)</h3>
+<ul>
+<li><strong>dickydoouk/tp-link-tapo-connect</strong> — TypeScript/Node implementation of the Tapo control protocol. Reference for protocol details; not a runtime dependency.</li>
+<li><strong>peterstamps/TAPO-camera-ONVIF-RTSP-and-AI-Object-Recognition</strong> — community ONVIF + RTSP demo against C225. Reference for ONVIF event subscription patterns (deferred to post-v1).</li>
+<li><strong>digitaltrails/onvifeye</strong> — ONVIF Python client targeting C225/C125. Reference for the onvif-zeep-async usage pattern.</li>
+</ul>
+<h3 id="3-6-why-a-thin-custom-cli-is-justified">3.6 Why a thin custom CLI is justified</h3>
+<p>pytapo and onvif-zeep-async are libraries, not CLIs. The shell-friendly affordances <code>tapo-cli</code> adds — alias/group resolution, chmod-0600 dual-credential file handling, deterministic exit codes, JSON/JSONL output across all verbs, parallelized batch operations with structured failure reporting, the three-mechanism snapshot fallback, the <code>stream</code>-emits-URL convention — are not present in any existing tool. The wrapper does not duplicate protocol work; it adds a config-and-output layer over maintained libraries and an optional ffmpeg subprocess seam.</p>
+<p>---</p>
+<h2 id="4-architecture-decision-wrap-vs-reimplement">4. Architecture Decision: Wrap vs Reimplement</h2>
+<h3 id="4-1-decision">4.1 Decision</h3>
+<p><strong>Hybrid wrap.</strong> Specifically:</p>
+<ul>
+<li><strong>Wrap pytapo 3.4.13</strong> for the camera control plane (PTZ, presets, motion, alarm, LED, privacy, audio, night-vision, OSD, reboot, info)</li>
+<li><strong>Wrap onvif-zeep-async 4.0.4</strong> for ONVIF WS-Discovery and snapshot-fallback</li>
+<li><strong>Wrap WSDiscovery 2.1.2</strong> for the WS-Discovery transport (used by onvif-zeep-async or directly)</li>
+<li><strong>Subprocess ffmpeg</strong> for the snapshot-of-last-resort and the <code>record</code> verb's recording path</li>
+</ul>
+<p>Do not reimplement the Tapo HTTPS control protocol, the ONVIF SOAP envelope, or video codec handling.</p>
+<h3 id="4-2-rationale">4.2 Rationale</h3>
+<table><thead><tr><th>Factor</th><th>Wrap pytapo + ONVIF + ffmpeg</th><th>Reimplement protocol(s)</th></tr></thead><tbody>
+<tr><td>Tapo HTTPS control plane</td><td>Free</td><td>~800 lines + per-model variance</td></tr>
+<tr><td>Tapo session/token derivation</td><td>Free, maintained</td><td>~400 lines + ongoing churn</td></tr>
+<tr><td>Camera-account vs cloud-account auth dance</td><td>Free</td><td>Re-derive every Tapo app revision</td></tr>
+<tr><td>ONVIF SOAP envelopes</td><td>Free (via onvif-zeep-async)</td><td>Months of WSDL work</td></tr>
+<tr><td>WS-Discovery multicast</td><td>Free (via WSDiscovery)</td><td>~300 lines + Windows/macOS quirks</td></tr>
+<tr><td>RTSP container + H.264 frame extraction</td><td>Free (via ffmpeg)</td><td>Years</td></tr>
+<tr><td>Device family coverage</td><td>30+ models, community-tested</td><td>Ship for 5, hope for the rest</td></tr>
+<tr><td>Firmware churn response time</td><td>Upstream patches</td><td>We patch every regression</td></tr>
+<tr><td>v1 ship time</td><td>Days-to-weeks</td><td>Months</td></tr>
+<tr><td>Long-term maintenance burden</td><td>Track minor version bumps + ffmpeg version</td><td>Own a multi-protocol stack forever</td></tr>
+</tbody></table>
+<h3 id="4-3-why-three-libraries-not-one">4.3 Why three libraries, not one</h3>
+<p>A naive read of "wrap pytapo" suggests a single-library wrapper. Reality:</p>
+<ul>
+<li><strong>pytapo's discovery is weak.</strong> It expects you to already have the camera's IP. Real LAN discovery requires ONVIF or scanning.</li>
+<li><strong>pytapo's snapshot path is model-dependent.</strong> Some models return a working JPEG via the control plane; others return a stream-token-only response that requires further work. ONVIF <code>GetSnapshotUri</code> is the broader-coverage fallback.</li>
+<li><strong>Recording requires ffmpeg regardless.</strong> pytapo's own SD-card download example shells out to ffmpeg for the conversion step. There is no "pure pytapo" recording path.</li>
+</ul>
+<p>Three libraries each doing what they're best at is the honest architecture. Reject single-stack purity.</p>
+<h3 id="4-4-implementation-language">4.4 Implementation language</h3>
+<p><strong>Recommendation: Python 3.11+ with <code>uv</code> for dependency and tool management.</strong> Reasoning:</p>
+<ul>
+<li>All three primary libraries (pytapo, onvif-zeep-async, WSDiscovery) are Python; using them from Python is idiomatic and avoids a process-boundary tax on every command</li>
+<li>Matches <code>kasa-cli</code>'s stack — Dan can carry one mental model across both tools</li>
+<li><code>uv tool install tapo-cli</code> gives single-command global install with isolated venv</li>
+<li>pytapo's package metadata claims Python 3.13 minimum; the CLI MAY relax this to 3.11 in <code>pyproject.toml</code> if pytapo runs cleanly on 3.11 in CI (verify in Phase 1). If pytapo genuinely requires 3.13 in 3.5+ releases, <code>tapo-cli</code> SHALL adopt the same minimum.</li>
+</ul>
+<h3 id="4-5-considered-alternative-reimplement-in-typescript">4.5 Considered alternative: reimplement in TypeScript</h3>
+<p>A Bun TypeScript wrapper that shells out to <code>pytapo</code> was considered for stack consistency with other Dan tools. Rejected because:</p>
+<ul>
+<li>Each invocation pays both Python startup AND a process-spawn round-trip — roughly 2x the latency floor</li>
+<li>Three libraries, not one, would each need shell-out plumbing</li>
+<li>ffmpeg is process-spawn either way; adding a Python wrapper layer multiplies the seam count</li>
+<li>Two languages to maintain for a single tool</li>
+</ul>
+<p>If stack-uniformity becomes a requirement later, the same CLI surface can be re-fronted in Bun-TS shelling out to a Python <code>tapo-cli-rpc</code> daemon. That is a future concern.</p>
+<h3 id="4-6-considered-alternative-pure-onvif-no-pytapo">4.6 Considered alternative: pure ONVIF (no pytapo)</h3>
+<p>A pure-ONVIF implementation (no pytapo dependency) was considered for vendor-neutrality. Rejected because:</p>
+<ul>
+<li>ONVIF coverage on Tapo is per-firmware and is gated behind a Tapo-app "Tapo Lab &gt; Third-Party Compatibility" toggle on some models. The three-mechanism snapshot fallback (FR-11a) exists because pytapo's coverage of stills is the most-divergent surface across models — not because of a specific cited "varies" claim. (Operators wanting protocol-level evidence can consult TP-Link's third-party-compatibility FAQ entries and the community thread at community.tp-link.com regarding RTSP/ONVIF inconsistencies; specific URLs are intentionally omitted because they move and the citation would go stale.)</li>
+<li>Doorbells have minimal ONVIF support</li>
+<li>Tapo-specific features (alarm/siren, OSD, named night-vision modes, motion-event history, presets-by-name, audio TTS) are NOT exposed via ONVIF — they're proprietary Tapo control-plane verbs</li>
+<li>Going ONVIF-only would cut feature surface to the Profile-S subset (snapshot, RTSP URL, basic PTZ) and leave the rest unimplementable</li>
+</ul>
+<p>ONVIF is in the stack as a <strong>discovery primitive</strong> and a <strong>snapshot fallback</strong>, not as the primary control surface.</p>
+<p>---</p>
+<h2 id="5-functional-requirements">5. Functional Requirements</h2>
+<p>Each FR is atomic and independently testable.</p>
+<h3 id="5-1-discovery">5.1 Discovery</h3>
+<p><code>tapo-cli discover</code> runs <strong>two co-equal primary paths in parallel</strong> by default — WS-Discovery multicast and a subnet TCP/443 probe-scan — because consumer mesh routers and client-isolation silently drop multicast (see §3.4). Results from both paths are merged and deduplicated by MAC, falling back to IP when MAC is unavailable.</p>
+<ul>
+<li><strong>FR-1:</strong> <code>tapo-cli discover</code> SHALL invoke <strong>both</strong> primary paths concurrently: (a) ONVIF WS-Discovery multicast probe on UDP <code>239.255.255.250:3702</code>, and (b) a TCP/443 HTTPS probe-scan across the local subnet (resolved from the default route or <code>--target-network &lt;CIDR&gt;</code>).</li>
+<li><strong>FR-1a:</strong> Results from both paths SHALL be deduplicated by MAC (preferred key) then by IP (fallback). When the same device responds on both paths, the WS-Discovery record's ONVIF metadata SHALL be preserved and merged with the probe-scan record's reachability evidence.</li>
+<li><strong>FR-1b:</strong> <code>--ws-discovery-only</code> SHALL run only the multicast path (legacy behavior; useful when scanning is forbidden by network policy).</li>
+<li><strong>FR-1c:</strong> <code>--no-scan</code> is a synonym for <code>--ws-discovery-only</code>.</li>
+<li><strong>FR-1d:</strong> <code>--scan-only</code> SHALL run only the TCP/443 probe-scan path (useful when multicast is known-broken on the host's network).</li>
+<li><strong>FR-2:</strong> v1.0.0's <code>--scan</code> flag is <strong>deprecated</strong> but accepted for one release; using it SHALL emit a single deprecation warning on stderr and behave as the (now-default) co-primary scan path.</li>
+<li><strong>FR-3:</strong> Discovery SHALL complete within <code>--timeout</code> seconds (default <strong>30s</strong>, sized for the probe-scan; WS-Discovery's internal probe deadline is hardcoded to 5s of that budget). Aggregation SHALL emit results as soon as both paths return or the budget elapses, whichever is sooner.</li>
+<li><strong>FR-4:</strong> Discovery output SHALL include device IP, MAC, model (from ONVIF <code>GetDeviceInformation</code> or pytapo <code>getBasicInfo</code> when ONVIF is unavailable), hardware version, firmware version, the source path (<code>onvif</code> | <code>scan</code> | <code>both</code>), and a <code>supported</code> value (<code>true</code> | <code>false</code> | <code>untested</code>) per the §3.3 matrix.</li>
+<li><strong>FR-5:</strong> Discovery SHALL be invokable with <code>--target-network &lt;CIDR&gt;</code> to constrain both paths to a specific subnet.</li>
+<li><strong>FR-5a:</strong> Discovery completing within timeout with <strong>zero responding devices</strong> SHALL exit 0 with empty output (<code>[]</code> in <code>--json</code>/<code>--jsonl</code> modes; empty stdout in text mode) and emit a single INFO log line to stderr stating "timeout reached, 0 devices found." Exit code 3 (network error) SHALL be reserved for cases where both transports fail at the OS level (e.g., multicast bind error AND scan socket error).</li>
+<li><strong>FR-5b:</strong> On multi-NIC hosts (Wi-Fi + Tailscale + Docker bridges), discovery MAY bind to the wrong interface. The CLI SHALL document this in <code>--help</code> for <code>discover</code>. If <code>--target-network &lt;CIDR&gt;</code> is supplied <strong>and no local interface has an address inside that CIDR</strong>, discovery SHALL exit code 6 (config error) with a message naming the available interface CIDRs and a hint to choose one.</li>
+<li><strong>FR-5c:</strong> Multicast-drop is the <strong>expected</strong> failure mode on most home networks (see §3.4). The CLI SHALL not warn when WS-Discovery returns zero results so long as the scan path returned ≥1.</li>
+</ul>
+<h3 id="5-2-listing">5.2 Listing</h3>
+<ul>
+<li><strong>FR-6:</strong> <code>tapo-cli list</code> SHALL print every alias defined in the local config file with its resolved IP/MAC. By default, list does <strong>not</strong> issue a per-device probe — output reflects config-resolved data only.</li>
+<li><strong>FR-6a:</strong> <code>tapo-cli list --probe</code> SHALL additionally probe each device for liveness within <code>--timeout</code> and include an <code>online: bool</code> field.</li>
+<li><strong>FR-6b:</strong> List output in <code>--json</code>/<code>--jsonl</code> mode SHALL be a JSON array of list-view objects: <code>{alias, ip, mac, model, online: bool|null}</code> where <code>online</code> is <code>null</code> if <code>--probe</code> was not specified.</li>
+<li><strong>FR-7:</strong> <code>tapo-cli list --groups</code> SHALL print every group defined in config with its member alias list.</li>
+<li><strong>FR-8:</strong> <code>tapo-cli list --online-only</code> SHALL imply <code>--probe</code> and filter the output to devices that responded.</li>
+</ul>
+<h3 id="5-3-info">5.3 Info</h3>
+<ul>
+<li><strong>FR-9:</strong> <code>tapo-cli info &lt;target&gt;</code> SHALL issue live calls against the device (pytapo <code>getBasicInfo</code> + capability probes) and print full state including model, firmware, MAC, alias, motion-detection state, privacy-mode state, LED state, current night-vision mode, ptz-capable, audio-capable, alarm-capable, and on-board features.</li>
+<li><strong>FR-10:</strong> Info output in <code>--json</code> mode SHALL be a single JSON object matching the full Camera record per §10.1, with stable key names across firmware versions.</li>
+<li><strong>FR-10a:</strong> <code>tapo-cli info &lt;target&gt;</code> against a model NOT on the v1 verified list SHALL still execute, but SHALL include <code>"supported": false</code> and emit a single WARN log line to stderr.</li>
+</ul>
+<h3 id="5-4-snapshot">5.4 Snapshot</h3>
+<ul>
+<li><strong>FR-11:</strong> <code>tapo-cli snapshot &lt;target&gt; --output &lt;path&gt;</code> SHALL write a JPEG still image to <code>&lt;path&gt;</code>.</li>
+<li><strong>FR-11a:</strong> Snapshot SHALL try mechanisms in this order, advancing on failure: (1) pytapo native snapshot path, (2) ONVIF <code>GetSnapshotUri</code> via onvif-zeep-async, (3) ffmpeg single-frame capture from the RTSP stream URL (<code>ffmpeg -y -i rtsp://... -frames:v 1 &lt;path&gt;</code>).</li>
+<li><strong>FR-11a.1: Tier-advance condition.</strong> A mechanism is considered FAILED — and the next tier is attempted — on any of: (a) the per-mechanism budget (FR-11a.3) elapses without a complete response, (b) a non-200 HTTP response or a non-JPEG payload (verified by magic-byte sniffing the first 3 bytes for <code>FF D8 FF</code>), or (c) any unhandled exception OTHER THAN auth-rejection.</li>
+<li><strong>FR-11a.2: Auth short-circuit.</strong> Auth-rejection at any tier — HTTP 401 from the snapshot endpoint, pytapo <code>_AUTH_FAILED</code> / <code>AuthError</code>, or RTSP 401 — SHALL NOT advance to the next tier. The snapshot verb SHALL exit code 2 immediately with a structured error naming the credential that was rejected. Rationale: if pytapo can't auth, ONVIF and RTSP are also using the wrong credential — burning their budgets re-failing is wasteful and noisy.</li>
+<li><strong>FR-11a.3: Budget split.</strong> <code>--timeout &lt;seconds&gt;</code> is the <strong>TOTAL wall-clock budget</strong> across all three mechanisms (default 5s, raise it for slow networks). The default split is 40% pytapo, 30% ONVIF, 30% ffmpeg. Override per-mechanism via <code>--snapshot-budget pytapo=N,onvif=N,ffmpeg=N</code> where each <code>N</code> is seconds. The sum SHALL NOT exceed <code>--timeout</code>; if it does, the CLI SHALL exit 64 (usage error).</li>
+<li><strong>FR-11a.4: ffmpeg-missing is config not device.</strong> If snapshot reaches tier 3 and <code>ffmpeg</code> is not on <code>PATH</code>, the CLI SHALL exit code <strong>6 (config error)</strong> — not code 1 (device) — with a structured error naming the missing dependency and a hint to install ffmpeg or run with <code>--snapshot-budget ffmpeg=0</code> to disable the tier.</li>
+<li><strong>FR-11b:</strong> The mechanism that succeeded SHALL be reported in <code>--json</code> output as <code>{"mechanism": "pytapo"|"onvif"|"ffmpeg"}</code> and in <code>-v</code> mode as a stderr log line. This is observability, not contract — the CLI SHALL NOT promise a specific mechanism per model.</li>
+<li><strong>FR-11c:</strong> All three mechanisms failing without auth-rejection SHALL exit code 1 (device error) with a structured error listing each attempt's failure reason and elapsed time.</li>
+<li><strong>FR-11d:</strong> <code>--output -</code> SHALL write the JPEG bytes to stdout. In this mode, <code>--json</code> and <code>--jsonl</code> SHALL exit code 64 as mutually-exclusive. <code>--quiet</code> IS permitted alongside <code>--output -</code> because the JPEG bytes ARE the stdout payload — the no-stdout invariant of <code>--quiet</code> does not apply when stdout is the binary payload, but stderr-side suppression still applies.</li>
+</ul>
+<h3 id="5-5-stream">5.5 Stream</h3>
+<ul>
+<li><strong>FR-12:</strong> <code>tapo-cli stream &lt;target&gt;</code> SHALL print a single RTSP URL on stdout in the form <code>rtsp://&lt;camera-account-user&gt;:&lt;camera-account-pass&gt;@&lt;ip&gt;:554/&lt;stream-path&gt;</code> where <code>&lt;stream-path&gt;</code> is resolved per FR-12b.</li>
+<li><strong>FR-12a:</strong> <code>--quality sd</code> SHALL request the sub-stream (lower resolution); <code>--quality hd</code> is the default. The legacy <code>--protocol stream2</code> flag is <strong>deprecated</strong> but accepted for one release as a synonym for <code>--quality sd</code>.</li>
+<li><strong>FR-12b: ONVIF GetProfiles-driven resolver.</strong> The stream-path resolution SHALL prefer the ONVIF <code>GetProfiles</code> response when available — match <code>--lens</code> and <code>--quality</code> to a profile by name (e.g., <code>mainStream</code> / <code>subStream</code> / <code>mainStream2</code> / <code>subStream2</code>) or by encoder configuration. If ONVIF is unavailable or returns no usable profile, the CLI SHALL fall back to the <strong>defaults</strong> in the truth table below. Both behaviors are documented and the ONVIF-resolved path SHALL be reported in <code>--json</code> output as <code>"resolver": "onvif"|"defaults"</code>.</li>
+</ul>
+<p>  <strong>Lens × quality default truth table</strong> (used when ONVIF GetProfiles is unavailable):</p>
+<table><thead><tr><th>lens</th><th>quality</th><th>stream path</th></tr></thead><tbody>
+<tr><td>wide</td><td>hd</td><td><code>/stream1</code></td></tr>
+<tr><td>wide</td><td>sd</td><td><code>/stream2</code></td></tr>
+<tr><td>telephoto</td><td>hd</td><td><code>/stream6</code></td></tr>
+<tr><td>telephoto</td><td>sd</td><td><code>/stream7</code></td></tr>
+</tbody></table>
+<p>  These defaults are documented and overridable, not contractual. Operators with non-Tapo-firmware cameras or experimental builds SHALL use <code>--profile &lt;name&gt;</code> (FR-12b.1) to bypass the table entirely.</p>
+<ul>
+<li><strong>FR-12b.1: Profile override.</strong> <code>--profile &lt;name&gt;</code> SHALL force a specific ONVIF profile by name and bypass both the truth table and the lens/quality flags.</li>
+<li><strong>FR-12b.2: Profile listing.</strong> <code>--list-profiles</code> SHALL emit the ONVIF <code>GetProfiles</code> response as a JSON array of <code>{name, lens?, quality?, encoder, resolution}</code> records to stdout and exit 0. If ONVIF is unavailable on the target, it SHALL exit code 5.</li>
+<li><strong>FR-12c:</strong> <code>--protocol hls</code> is <strong>deferred to a future phase</strong>. Tapo cameras do not natively serve HLS; constructing it requires an ffmpeg transcoder. v1 SHALL exit code 5 with a hint to use an external transcoder.</li>
+<li><strong>FR-12d:</strong> <code>stream</code> SHALL NOT decode, transcode, or display video. It is a URL emitter.</li>
+<li><strong>FR-12e:</strong> The camera-account credential used in the URL SHALL be resolved per §6.4. If no camera account is configured for the target, <code>stream</code> SHALL exit code 2 with a hint to set one in the Tapo app (Settings &gt; Advanced settings &gt; Camera account) and add <code>camera_account_file</code> for the device in config.</li>
+<li><strong>FR-12f: Credential-leak hardening.</strong> <code>--credentials-via-env</code> SHALL emit the URL with credentials redacted to <code>&lt;user&gt;:&lt;pass&gt;</code> placeholders on stdout AND export <code>RTSP_USER</code> / <code>RTSP_PASS</code> environment variables for an exec'd child process. This avoids the credential ever appearing in shell history or process-list snapshots.</li>
+<li><strong>FR-12g: Exec shorthand.</strong> <code>--exec &lt;argv...&gt;</code> SHALL replace <code>tapo-cli</code> with the named child process (via <code>execvp</code>), passing the constructed RTSP URL as the value of an <code>RTSP_URL</code> env var (or substituting it into a literal <code>{}</code> placeholder anywhere in <code>&lt;argv&gt;</code>). Combined with <code>--credentials-via-env</code> (FR-12f), the credential is exported to the child but never written to a shell-visible buffer. Example: <code>tapo-cli stream office-cam --credentials-via-env --exec ffmpeg -i '{}' -c copy out.mp4</code>.</li>
+</ul>
+<h3 id="5-6-record-subprocess">5.6 Record (Subprocess)</h3>
+<ul>
+<li><strong>FR-13:</strong> <code>tapo-cli record &lt;target&gt; --output &lt;path&gt;</code> SHALL spawn <code>ffmpeg</code> as a foreground child process, configured to record the RTSP stream to <code>&lt;path&gt;</code> in MP4 container with <code>-c copy</code> (no transcoding by default). The verb name <code>record</code> already announces intent to write a file; the previous <code>--with-recording</code> opt-in flag has been removed in v1.1.</li>
+<li><strong>FR-13a: Footgun guard.</strong> In <strong>non-tty mode</strong>, <code>record</code> SHALL require ONE of <code>--duration &lt;seconds&gt;</code> or <code>--max-bytes &lt;N&gt;</code> — open-ended recording without a cap from a script is a footgun and SHALL exit code 64 with a hint. In <strong>tty mode</strong> without either cap, the CLI SHALL prompt on stderr for confirmation ("Record indefinitely until Ctrl-C? [y/N] ") and abort on no/empty.</li>
+<li><strong>FR-13b:</strong> The recording lives and dies with the CLI invocation. SIGINT (Ctrl-C) or SIGTERM on the <code>tapo-cli</code> process SHALL: (1) forward the signal to the ffmpeg child, (2) wait up to 5 seconds for ffmpeg to flush and finalize the MP4, (3) exit with the matching signal code (130 / 143).</li>
+<li><strong>FR-13c:</strong> ffmpeg not on <code>PATH</code> SHALL exit code 6 (config error) with a hint to install ffmpeg.</li>
+<li><strong>FR-13d:</strong> <code>--duration &lt;seconds&gt;</code> SHALL pass <code>-t &lt;seconds&gt;</code> to ffmpeg for fixed-length recordings.</li>
+<li><strong>FR-13d.1:</strong> <code>--max-bytes &lt;N&gt;</code> SHALL pass <code>-fs &lt;N&gt;</code> to ffmpeg for size-capped recordings.</li>
+<li><strong>FR-13e:</strong> <code>--quality</code>, <code>--lens</code>, <code>--profile</code>, and <code>--list-profiles</code> SHALL apply the same way as in <code>stream</code> (FR-12a, FR-12b, FR-12b.1, FR-12b.2).</li>
+<li><strong>FR-13f:</strong> v1 SHALL NOT support segmented recording, motion-triggered recording, or NVR-style retention. <code>record</code> is one-shot. Use Frigate or Shinobi for those use cases.</li>
+<li><strong>FR-13g: Performance targets.</strong> Start-to-first-frame SHALL be &lt; <strong>3000 ms p95</strong> under §7.1 network assumptions. SIGINT-to-finalized-MP4 SHALL be &lt; <strong>2000 ms</strong> for recordings under 1 GB (the 5s grace at FR-13b is the upper budget; 2s is the typical-case target).</li>
+</ul>
+<h3 id="5-7-ptz">5.7 PTZ</h3>
+<p>PTZ unit semantics are deterministic and depend on the target model's <code>ptz-mode</code> field in the §3.3.1 capability matrix.</p>
+<ul>
+<li><strong>FR-14:</strong> <code>tapo-cli ptz &lt;target&gt; pan left|right [--step &lt;N&gt;]</code> SHALL move the camera horizontally. <code>--step &lt;N&gt;</code> SHALL be passed to pytapo as an <strong>integer</strong>. Interpretation:</li>
+<li>On models with <code>ptz-mode: continuous</code> (the §3.3.1 matrix lists C225 as the v1 example), <code>&lt;N&gt;</code> is interpreted as <strong>DEGREES</strong>.</li>
+<li>On models with <code>ptz-mode: step</code>, <code>&lt;N&gt;</code> is interpreted as <strong>device-step-units</strong> (camera-internal increments — typically a few degrees per unit, but not contractual).</li>
+<li>Default <code>--step</code> value: 10 in either unit. Models with neither mode (<code>ptz-mode: none</code>) exit code 5 per FR-17a.</li>
+<li><strong>FR-15:</strong> <code>tapo-cli ptz &lt;target&gt; tilt up|down [--step &lt;N&gt;]</code> SHALL move the camera vertically. Same <code>--step</code> semantics as FR-14.</li>
+<li><strong>FR-16:</strong> <code>tapo-cli ptz &lt;target&gt; zoom in|out [--step &lt;N&gt;]</code> SHALL zoom the camera. <strong>Zoom <code>--step</code> is ALWAYS device-step-units regardless of <code>ptz-mode</code></strong> — there is no documented degree-mapping for zoom. Models without zoom SHALL exit code 5.</li>
+<li><strong>FR-17:</strong> <code>tapo-cli ptz &lt;target&gt; stop</code> SHALL halt any in-progress motion immediately.</li>
+<li><strong>FR-17a:</strong> PTZ on non-PTZ-capable models (<code>ptz-mode: none</code> in the §3.3.1 matrix) SHALL exit code 5 with the message "model does not support PTZ" and the resolved model name.</li>
+<li><strong>FR-17b:</strong> PTZ verbs SHALL be idempotent at the request level — issuing <code>pan left</code> twice in succession SHALL move twice (PTZ is a verb, not a state). This is the opposite of <code>on</code>/<code>off</code> idempotence.</li>
+<li><strong>FR-17c:</strong> <code>--json</code> output for PTZ verbs SHALL include <code>{"step": N, "step_unit": "degrees"|"device-step-units"}</code> so callers can record what was actually issued without re-deriving from the model.</li>
+</ul>
+<h3 id="5-8-presets">5.8 Presets</h3>
+<ul>
+<li><strong>FR-18:</strong> <code>tapo-cli preset &lt;target&gt; list</code> SHALL print all saved presets on the device in <code>{id, name}</code> form.</li>
+<li><strong>FR-19:</strong> <code>tapo-cli preset &lt;target&gt; goto &lt;name&gt;</code> SHALL move the camera to the named preset. Unknown names SHALL exit code 4.</li>
+<li><strong>FR-20:</strong> <code>tapo-cli preset &lt;target&gt; save &lt;name&gt;</code> SHALL save the current camera position as a preset under <code>&lt;name&gt;</code>. Existing names SHALL be overwritten with a warn log.</li>
+<li><strong>FR-21:</strong> <code>tapo-cli preset &lt;target&gt; delete &lt;name&gt;</code> SHALL delete the named preset. Unknown names SHALL exit code 4.</li>
+</ul>
+<h3 id="5-9-motion-detection">5.9 Motion Detection</h3>
+<ul>
+<li><strong>FR-22:</strong> <code>tapo-cli motion &lt;target&gt; enable</code> SHALL enable on-camera motion detection.</li>
+<li><strong>FR-23:</strong> <code>tapo-cli motion &lt;target&gt; disable</code> SHALL disable on-camera motion detection.</li>
+<li><strong>FR-24:</strong> <code>tapo-cli motion &lt;target&gt; status</code> SHALL print enabled/disabled state plus configured sensitivity.</li>
+<li><strong>FR-25:</strong> <code>tapo-cli motion &lt;target&gt; history [--since &lt;RFC3339&gt;] [--limit N]</code> SHALL emit recent motion events as JSON/JSONL. Default limit 50; default <code>--since</code> is 24h ago.</li>
+<li><strong>FR-25a:</strong> Motion event payloads SHALL include <code>{ts, event_type, region, has_clip}</code>:</li>
+<li><code>ts</code> SHALL be <strong>RFC 3339 UTC with the literal <code>Z</code> suffix</strong> (e.g., <code>2026-04-28T08:14:02Z</code>). No local-time output. No fractional seconds unless the device reports them, in which case 3-digit milliseconds are preserved (e.g., <code>2026-04-28T08:14:02.412Z</code>).</li>
+<li><code>event_type</code> is one of <code>motion</code>, <code>person</code>, <code>vehicle</code>, <code>doorbell-press</code>, <code>unknown</code>.</li>
+<li><code>region</code> is the device-specific region label, often <code>full</code>.</li>
+<li><code>has_clip</code> reflects whether on-camera SD-card recording exists; downloading the clip is <strong>out of scope for v1</strong> (see §14).</li>
+<li><strong>FR-25b: <code>--since</code> parsing.</strong> <code>--since</code> SHALL accept any RFC 3339 timestamp. If no offset is supplied (e.g., <code>2026-04-28T00:00:00</code>), the CLI SHALL assume UTC and emit a single INFO log line on stderr noting the assumption. Bare ISO 8601 dates without time (<code>2026-04-28</code>) SHALL be interpreted as <code>2026-04-28T00:00:00Z</code>.</li>
+<li><strong>FR-25c: Sort order.</strong> Results SHALL be <strong>sorted ascending by <code>ts</code></strong> before emission. This is contract — callers can rely on it for delta-poll loops.</li>
+<li><strong>FR-25d: Future <code>--since</code>.</strong> A <code>--since</code> timestamp in the future (after the device's current clock) SHALL exit code 0 with empty output (<code>[]</code> in <code>--json</code>/<code>--jsonl</code> mode). It is not an error to ask "what happened after now" — the answer is "nothing yet."</li>
+</ul>
+<h3 id="5-10-alarm">5.10 Alarm</h3>
+<ul>
+<li><strong>FR-26:</strong> <code>tapo-cli alarm &lt;target&gt; enable</code> SHALL enable the camera's siren/alarm response.</li>
+<li><strong>FR-27:</strong> <code>tapo-cli alarm &lt;target&gt; disable</code> SHALL disable it.</li>
+<li><strong>FR-28:</strong> <code>tapo-cli alarm &lt;target&gt; trigger [--duration &lt;seconds&gt;]</code> SHALL manually fire the siren. Duration defaults to a model-specific value (typically 10s); models with no manual-trigger support SHALL exit code 5.</li>
+<li><strong>FR-29:</strong> <code>tapo-cli alarm &lt;target&gt; status</code> SHALL print enabled/disabled and current-firing state.</li>
+</ul>
+<h3 id="5-11-led-privacy-night-vision">5.11 LED, Privacy, Night Vision</h3>
+<ul>
+<li><strong>FR-30:</strong> <code>tapo-cli led &lt;target&gt; on|off|status</code> SHALL control the front status LED.</li>
+<li><strong>FR-31:</strong> <code>tapo-cli privacy &lt;target&gt; enable|disable|status</code> SHALL control privacy mode (lens cover or feed disable). Models without privacy mode SHALL exit code 5.</li>
+<li><strong>FR-32:</strong> <code>tapo-cli night-vision &lt;target&gt; auto|on|off|ir-only</code> SHALL set night-vision mode. Models that don't support a given mode SHALL exit code 5 with the supported set listed.</li>
+</ul>
+<h3 id="5-12-audio">5.12 Audio</h3>
+<ul>
+<li><strong>FR-33:</strong> <code>tapo-cli audio &lt;target&gt; volume &lt;0-100&gt;</code> SHALL set speaker volume. Models without a speaker SHALL exit code 5.</li>
+<li><strong>FR-34:</strong> <code>tapo-cli audio &lt;target&gt; mic mute|unmute</code> SHALL control microphone capture.</li>
+<li><strong>FR-35:</strong> <code>tapo-cli audio &lt;target&gt; speaker mute|unmute</code> SHALL control speaker output.</li>
+<li><strong>FR-36:</strong> <code>tapo-cli audio &lt;target&gt; tts --text "&lt;message&gt;"</code> SHALL play a text-to-speech message through the camera speaker on models that support it (e.g., C520WS). Unsupported models SHALL exit code 5.</li>
+</ul>
+<h3 id="5-13-osd-on-screen-display">5.13 OSD (On-Screen Display)</h3>
+<ul>
+<li><strong>FR-37:</strong> <code>tapo-cli osd &lt;target&gt; set --text "&lt;s&gt;" [--position bl|br|tl|tr] [--show-time true|false]</code> SHALL configure the on-screen display overlay. Position defaults to <code>bl</code> (bottom-left).</li>
+<li><strong>FR-37a: Length measurement.</strong> The 32-character limit is measured in <strong>Unicode codepoints</strong>, not bytes. Inputs above 32 codepoints SHALL exit 64 (usage error). Codepoints below 32 SHALL be passed to the device as-is.</li>
+<li><strong>FR-37b: Codepoint compatibility.</strong> Some camera firmware silently rejects non-ASCII codepoints on the device side. When the device returns an error response on a codepoint it cannot render, the CLI SHALL exit code 1 (device error) — not 64 — with a structured error indicating the device rejected the payload. This distinguishes "you sent too much" (CLI's fault, 64) from "device firmware can't render that glyph" (device's fault, 1).</li>
+</ul>
+<h3 id="5-14-reboot-and-set">5.14 Reboot and Set</h3>
+<ul>
+<li><strong>FR-38:</strong> <code>tapo-cli reboot &lt;target&gt;</code> SHALL reboot the camera. In tty mode it SHALL prompt for confirmation <strong>on stderr</strong> (so stdout JSON/text contracts are preserved when piped); in non-tty mode it SHALL exit 64 unless <code>--yes</code> is supplied. <code>--quiet</code> SHALL imply <code>--yes</code> (a quiet caller has signalled intent to proceed without prompts; the alternative — silently failing on missing <code>--yes</code> — is worse than a clear contract).</li>
+<li><strong>FR-39:</strong> <code>tapo-cli set &lt;target&gt; --image-flip true|false</code> SHALL set image flip on supported models.</li>
+<li><strong>FR-39a:</strong> <code>tapo-cli set &lt;target&gt; --timezone &lt;IANA&gt;</code> SHALL set the camera's timezone (e.g., <code>America/Toronto</code>).</li>
+<li><strong>FR-39b:</strong> Other camera config knobs (HDR, noise cancelling, auto-track, recording-to-SD enable) are <strong>deferred to Phase 2+</strong>. v1 ships only <code>--image-flip</code> and <code>--timezone</code>.</li>
+</ul>
+<h3 id="5-15-groups">5.15 Groups</h3>
+<ul>
+<li><strong>FR-40:</strong> Groups SHALL be defined locally in the CLI config file's <code>[groups]</code> table, NOT on the devices themselves.</li>
+<li><strong>FR-41:</strong> A group target (<code>@group-name</code> or <code>--group group-name</code>) SHALL resolve to its member aliases at command execution time.</li>
+<li><strong>FR-42:</strong> Group operations SHALL execute device commands in parallel up to a configurable concurrency limit (default 5; per-command override via <code>--concurrency N</code>). Lower default than kasa-cli (10) because camera control ops are heavier.</li>
+<li><strong>FR-43:</strong> Group operations SHALL report per-device success/failure individually; a single device failure SHALL NOT abort the group operation.</li>
+<li><strong>FR-43a:</strong> Group exit code SHALL be:</li>
+<li><strong>0</strong> if every sub-operation succeeded</li>
+<li><strong>7</strong> (partial failure) if at least one sub-operation succeeded AND at least one failed</li>
+<li>When <strong>all</strong> sub-operations failed, the exit code SHALL be the failure code of the sub-operation whose target appears first in the resolved alias list. The "resolved alias list" is the alias-config-file ordering of the group's members — <strong>NOT</strong> the execution-completion order. Rationale: deterministic exit codes matter more than reflecting which sub-op happened to lose its race; callers can pattern-match the first-target's error from JSONL output for diagnosis.</li>
+<li><strong>FR-43b:</strong> v1 SHALL NOT support <code>groups add</code> / <code>groups remove</code> sub-verbs. <code>tapo-cli groups list</code> is the only group sub-verb in v1; mutations are by hand-editing the config.</li>
+<li><strong>FR-43c:</strong> <code>record</code> and <code>stream</code> SHALL refuse group targets and exit 64. Recording or URL-emitting against multiple devices simultaneously is a footgun; require the user to spell out per-device invocations.</li>
+</ul>
+<h3 id="5-16-batch">5.16 Batch</h3>
+<ul>
+<li><strong>FR-44:</strong> <code>tapo-cli batch --file &lt;path&gt;</code> SHALL read newline-delimited commands from a file and execute them, emitting one JSONL result per line on stdout.</li>
+<li><strong>FR-44a: JSONL per-line shape.</strong> Each emitted line SHALL conform to:</li>
+</ul>
+<p>  ``<code>json   {     "command": "&lt;verb-and-flags-string&gt;",     "target": "&lt;resolved-alias-or-ip&gt;",     "status": "ok" | "error",     "exit_code": &lt;int&gt;,     "result": &lt;verb's normal JSON payload, present iff status == "ok"&gt;,     "error": {                            // present iff status == "error"       "code": "&lt;error-enum-from-§11.2&gt;",       "message": "&lt;human-readable&gt;",       "hint": "&lt;optional actionable hint&gt;"     }   }   </code>``</p>
+<p>  <code>result</code> is the verb's normal <code>--json</code> payload on success (e.g., a Stream record for <code>stream</code>, a Camera record for <code>info</code>). <code>error</code> matches §11.2's structured error shape <strong>minus</strong> the <code>exit_code</code> wrapping (the per-line <code>exit_code</code> field replaces it). Tooling can <code>jq -c '. | select(.status=="error")'</code> deterministically.</p>
+<ul>
+<li><strong>FR-45:</strong> <code>tapo-cli batch --stdin</code> SHALL accept the same format from stdin for shell-pipe composability.</li>
+<li><strong>FR-45a:</strong> Batch exit code semantics SHALL match FR-43a (0 / 7 / first-failure-code).</li>
+<li><strong>FR-45b:</strong> Empty-input batch SHALL exit 0 with no stdout output (<code>[]</code> in <code>--json</code> mode). Blank lines SHALL be skipped silently. Lines beginning with <code>#</code> SHALL be treated as comments.</li>
+<li><strong>FR-45c:</strong> On SIGINT or SIGTERM during batch execution, the CLI SHALL: (1) cease dispatching new sub-operations, (2) wait up to 2 seconds for in-flight sub-operations to complete and have their results emitted, (3) emit a final JSONL summary line <code>{"event":"interrupted","completed":N,"pending":M}</code> to stdout, (4) flush the pytapo session cache for any successfully-authenticated device, (5) exit with code <strong>130</strong> (SIGINT) or <strong>143</strong> (SIGTERM).</li>
+</ul>
+<h3 id="5-17-output-formats">5.17 Output Formats</h3>
+<ul>
+<li><strong>FR-46:</strong> Default output SHALL be human-readable text on a tty, JSONL otherwise. Specifically: <code>auto</code> mode SHALL emit JSONL whenever <code>isatty(stdout) == false</code>, <strong>including file redirects</strong> (e.g., <code>tapo-cli list &gt; out.txt</code> writes JSONL, not text — redirected output is a machine consumer by definition). Pipes (<code>| cat</code>) and command substitutions (<code>$(...)</code>) are also JSONL.</li>
+<li><strong>FR-47:</strong> <code>--json</code> SHALL force pretty JSON output regardless of tty detection.</li>
+<li><strong>FR-48:</strong> <code>--jsonl</code> SHALL force one-JSON-per-line output regardless of tty detection.</li>
+<li><strong>FR-49:</strong> <code>--quiet</code> SHALL suppress all stdout output; only the exit code communicates result.</li>
+<li><strong>FR-49a:</strong> In <code>--json</code> and <code>--jsonl</code> modes, on <strong>any</strong> non-zero exit, stdout SHALL be valid parseable JSON or empty. The CLI SHALL never emit malformed JSON. For batch and group operations with mixed results, stdout JSONL SHALL contain one result object per attempted operation including those that failed (each with its own <code>error</code> field per §11.2). Stderr SHALL emit the structured summary error per §11.2 once.</li>
+</ul>
+<h3 id="5-18-error-handling">5.18 Error Handling</h3>
+<ul>
+<li><strong>FR-50:</strong> Network errors SHALL exit with code 3 and emit a structured error object to stderr.</li>
+<li><strong>FR-51:</strong> Authentication failures (cloud-account or camera-account) SHALL exit with code 2 and a credential-source hint that names which credential failed.</li>
+<li><strong>FR-52:</strong> Unknown alias or unreachable IP SHALL exit with code 4.</li>
+<li><strong>FR-53:</strong> Verbose mode (<code>-v</code>, <code>-vv</code>) SHALL emit progressively detailed JSON-structured logs to stderr; stdout SHALL remain clean.</li>
+</ul>
+<h3 id="5-19-configuration-resolution">5.19 Configuration Resolution</h3>
+<ul>
+<li><strong>FR-54:</strong> Config file resolution order: (1) <code>--config &lt;path&gt;</code> flag if present, (2) <code>TAPO_CLI_CONFIG</code> env var if set and non-empty, (3) <code>~/.config/tapo-cli/config.toml</code> if it exists.</li>
+<li><strong>FR-54a:</strong> If <code>--config</code> or <code>TAPO_CLI_CONFIG</code> is set and the referenced file does not exist or cannot be read, the CLI SHALL exit code 6 (config error). Silent fallback is forbidden — explicit selection means strict.</li>
+<li><strong>FR-54b:</strong> If only the default location is consulted and it does not exist, the CLI SHALL operate with built-in defaults and emit a single INFO log line on stderr ("no config file found, using defaults").</li>
+<li><strong>FR-54c:</strong> <code>tapo-cli config show</code> SHALL print the effective resolved config (after all overrides) in TOML format. <code>tapo-cli config validate [&lt;path&gt;]</code> SHALL load and validate a config file and exit 0 / 6.</li>
+<li><strong>FR-54d: <code>config show</code> redaction.</strong> Passwords in <code>config show</code> output SHALL be redacted to the literal string <code>***</code>. This applies to <strong>both</strong> the cloud-account credential (resolved from <code>[credentials] file_path</code> or <code>TAPO_PASSWORD</code>) and per-device camera-account credentials (resolved from <code>[devices.&lt;alias&gt;] camera_account_file</code>). The redaction is non-optional — there is no <code>--show-secrets</code> flag in v1.</li>
+</ul>
+<h3 id="5-20-auth-migration">5.20 Auth migration</h3>
+<ul>
+<li><strong>FR-55: <code>auth migrate</code>.</strong> <code>tapo-cli auth migrate</code> SHALL rewrite older versioned credential files in place to the current <code>version</code> schema. The verb SHALL refuse to run if any target file is not chmod 0600 (exit 2) and SHALL preserve the original file at <code>&lt;path&gt;.v&lt;old&gt;.bak</code>. This mirrors <code>kasa-cli</code>'s migration verb and exists for forward-compat as the credential schema evolves.</li>
+</ul>
+<p>---</p>
+<h2 id="6-authentication-and-credentials">6. Authentication and Credentials</h2>
+<h3 id="6-1-the-dual-credential-reality">6.1 The dual-credential reality</h3>
+<p>Tapo cameras require <strong>two distinct credentials</strong> for full functionality:</p>
+<p>1. <strong>Camera account ("third-party account")</strong> — a per-device username and password (6-32 chars each) configured in the Tapo app under Settings &gt; Advanced settings &gt; Camera account. This is the <strong>PRIMARY</strong> credential for <code>tapo-cli</code> in v1.1+: it authenticates RTSP streaming, ONVIF connections, AND is pytapo's documented preferred path for the control plane (PTZ, motion, alarm, LED, etc.) on current Tapo firmware. 2. <strong>TP-Link cloud account</strong> — the email and password the user uses to log into the Tapo mobile app. This is a <strong>FALLBACK</strong> credential, kept for legacy firmware that does not honor camera-account login on the control plane (older C200/C210 / TC55-era builds). When pytapo's camera-account login fails with <code>_AUTH_FAILED</code> and a cloud account is configured, the CLI MAY retry with the cloud account, emitting a deprecation warning (FR-CRED-8.1).</p>
+<p>Rationale for the inversion vs v1.0.0: pytapo itself has settled on camera-account-first for current firmware. The cloud-account path encourages users to put their Tapo-app password into local files unnecessarily — a per-device credential confined to one camera is a smaller blast radius. v1.0.0 ordered them backwards; v1.1 corrects that.</p>
+<p>These are not interchangeable end-to-end. Streaming (RTSP) is camera-account-only. Control-plane is camera-account-preferred, cloud-account-fallback.</p>
+<h3 id="6-2-credential-sources-in-resolution-order-control-plane">6.2 Credential sources (in resolution order, control plane)</h3>
+<p>For each device, the CLI SHALL resolve in this order until a credential is obtained or all sources are exhausted:</p>
+<p>1. <strong>Per-device camera account file</strong> — <code>[devices.&lt;alias&gt;] camera_account_file</code> (PRIMARY). 2. <strong>Per-device cloud-account override</strong> — <code>[devices.&lt;alias&gt;] credential_file</code> (legacy-firmware fallback for this device). 3. <strong>Default cloud-account credentials file</strong> — <code>~/.config/kasa-cli/credentials</code> (shared with <code>kasa-cli</code> — same JSON v1 format, same TP-Link cloud account; tapo-cli reads but never writes this file). A tapo-only override <code>~/.config/tapo-cli/credentials</code> is honored if it exists and takes precedence over the shared kasa file (FR-CRED-3.1). 4. <strong>Environment variables</strong> — <code>TAPO_USERNAME</code> and <code>TAPO_PASSWORD</code> (cloud account). 5. <strong>No credentials configured</strong> — the CLI exits code 2 with a hint pointing at the Tapo-app camera-account menu and <code>[devices.&lt;alias&gt;] camera_account_file</code> config.</p>
+<p>Notes:</p>
+<ul>
+<li>The <code>--credential-source &lt;env|file|none&gt;</code> flag (§6.7) overrides this resolution order, scoping which sources are even consulted.</li>
+<li><strong>Partial environment-variable fall-through</strong> — if exactly ONE of <code>TAPO_USERNAME</code> / <code>TAPO_PASSWORD</code> is set and the other is empty, the env-var source SHALL be treated as "not set" and the resolver SHALL fall through to the next source. Verbose mode (<code>-v</code>) SHALL log this partial set as a single WARN line on stderr — half-set env vars are almost always a misconfiguration, but they should not block other sources.</li>
+<li>For RTSP-using verbs (<code>stream</code>, <code>record</code>), the resolver SHALL stop at step 1 — only the camera-account file is used. If step 1 yields no result, those verbs exit code 2 with the camera-account hint per FR-CRED-7.</li>
+</ul>
+<h3 id="6-3-credentials-file-format-cloud-account">6.3 Credentials file format (cloud account)</h3>
+<ul>
+<li><strong>FR-CRED-1:</strong> The default credentials file SHALL be JSON with a top-level <code>version</code> integer (currently <code>1</code>) plus the keys appropriate for that version. v1 keys: <code>username</code> (TP-Link cloud email), <code>password</code>. Unknown additional keys SHALL cause a config-validation error and exit code 6. Missing <code>version</code> SHALL be treated as v1 with a single deprecation warning on stderr.</li>
+<li><strong>FR-CRED-2:</strong> The CLI SHALL refuse to load a credentials file whose mode is more permissive than 0600 and SHALL exit with code 2 and an actionable error showing the current mode.</li>
+<li><strong>FR-CRED-3:</strong> A missing credentials file SHALL fall through to the next source (env vars) without warning. Verbose mode (<code>-v</code>) SHALL log the fall-through with the path that was tried.</li>
+<li><strong>FR-CRED-3.1: Shared cloud-account file with kasa-cli.</strong> The default cloud-account credentials file path SHALL be <code>~/.config/kasa-cli/credentials</code>. Rationale: TP-Link cloud accounts are issued per user, not per device family, so the same email + password authenticates both Kasa and Tapo control planes. The CLI SHALL prefer a tapo-only override at <code>~/.config/tapo-cli/credentials</code> when present (e.g., for users who maintain a separate Tapo-only TP-Link account); when both files exist, the tapo-only file wins and the shared file is not consulted. <code>tapo-cli</code> SHALL NEVER write to <code>~/.config/kasa-cli/credentials</code> — that file is owned by <code>kasa-cli</code> and read-only from this CLI's perspective. The shared file SHALL be subject to the same chmod-0600 enforcement as any other credentials file (FR-CRED-2). <code>tapo-cli auth migrate</code> (FR-CRED-15a) SHALL only act on <code>~/.config/tapo-cli/credentials</code>, never on the shared file.</li>
+</ul>
+<h3 id="6-4-camera-account-file-format-per-device">6.4 Camera-account file format (per-device)</h3>
+<ul>
+<li><strong>FR-CRED-4:</strong> Camera accounts SHALL live in <strong>separate</strong> files, one per device, referenced from <code>[devices.&lt;alias&gt;] camera_account_file = "&lt;path&gt;"</code> in the config.</li>
+<li><strong>FR-CRED-5:</strong> The camera-account file SHALL be JSON: <code>{"version": 1, "username": "&lt;6-32 chars&gt;", "password": "&lt;6-32 chars&gt;"}</code>, chmod 0600.</li>
+<li><strong>FR-CRED-6:</strong> The CLI SHALL never embed cleartext camera-account credentials into stderr logs. RTSP URLs printed by <code>stream</code> and constructed for <code>record</code> ARE the only place credentials appear in output, and <code>stream</code> SHALL emit them to stdout (not stderr).</li>
+<li><strong>FR-CRED-7:</strong> Verbs that require the camera account (<code>stream</code>, <code>record</code>) SHALL exit code 2 with an actionable hint if no <code>camera_account_file</code> is configured for the target. The hint SHALL name the Tapo-app menu path (Settings &gt; Advanced settings &gt; Camera account).</li>
+<li><strong>FR-CRED-8:</strong> Control-plane verbs (PTZ, motion, alarm, LED, privacy, night-vision, audio, OSD, info, reboot) SHALL attempt the <strong>camera-account credential first</strong> (per §6.2 step 1). On <code>_AUTH_FAILED</code> from pytapo's camera-account path, the CLI SHALL fall back to the cloud-account credential if one is configured (per §6.2 steps 2-4) and retry once.</li>
+<li><strong>FR-CRED-8.1: Deprecation warning on cloud fallback.</strong> When the cloud-account fallback fires (i.e., the camera-account login failed and the cloud-account login succeeded), the CLI SHALL emit a single WARN line on stderr per device per CLI invocation: <code>"WARN: cloud-account fallback used for &lt;alias&gt;; camera-account login is the supported path on current firmware. See §6.1."</code></li>
+</ul>
+<h3 id="6-5-pytapo-session-caching">6.5 pytapo session caching</h3>
+<ul>
+<li><strong>FR-CRED-9:</strong> Successful pytapo control-plane auth SHALL persist the session state to <code>~/.config/tapo-cli/.tokens/&lt;device-mac&gt;.json</code> with chmod 0600. The <code>.tokens/</code> directory SHALL be created with chmod 0700 on first use. The cached payload is treated as an <strong>opaque pytapo state blob</strong> — <code>tapo-cli</code> does not parse its internals — and SHALL include a top-level <code>pytapo_version</code> field naming the pytapo library version that produced it. On read, if <code>pytapo_version</code> mismatches the currently-installed pytapo, the cache entry SHALL be invalidated and a fresh handshake performed (one INFO line on stderr).</li>
+<li><strong>FR-CRED-10:</strong> Subsequent commands against the same device SHALL deserialize the cached state into pytapo before issuing requests. If pytapo signals session expiration, the CLI SHALL re-auth and update the cache.</li>
+<li><strong>FR-CRED-11:</strong> A 401-equivalent or pytapo <code>_AUTH_FAILED</code> response during a command SHALL invalidate the cached state and trigger a single retry with a fresh handshake. Two consecutive auth failures SHALL exit code 2. The cache SHALL also be invalidated when <code>--credential-source</code> (§6.7) selects a different source than the one that wrote the cache (the source name is recorded in the cache blob).</li>
+<li><strong>FR-CRED-12:</strong> <code>tapo-cli auth flush</code> SHALL delete all cached state files. <code>tapo-cli auth flush --target &lt;alias&gt;</code> SHALL delete only that device's state file.</li>
+<li><strong>FR-CRED-13:</strong> Concurrent <code>tapo-cli</code> invocations targeting the same device SHALL serialize on a per-device advisory lock (<code>flock</code> on the token state file). Cache writes SHALL use atomic file replacement (<code>write tmpfile + fsync + rename</code>). Lock acquisition SHALL time out after <code>--timeout</code> seconds (default 5); a timeout SHALL exit code <strong>3</strong> (network/contention) — not 2 (auth) — with a structured error naming the holding PID if the OS exposes it (Linux: read <code>/proc/locks</code>; macOS: best-effort via <code>lsof</code>, omit the field if unobtainable).</li>
+</ul>
+<h3 id="6-6-auth-status">6.6 <code>auth status</code></h3>
+<ul>
+<li><strong>FR-CRED-14:</strong> <code>tapo-cli auth status</code> SHALL emit, per cached state file: device alias (resolved from config; <code>&lt;unmapped&gt;</code> if no alias matches the MAC), MAC, cache file path, mtime, file size in bytes, expires_at (RFC 3339 string or <code>null</code> if unknown), cloud-account configured (bool), camera-account configured (bool, per-device). <code>--json</code> mode emits a JSON array. The CLI SHALL NOT issue liveness probes against cached devices in <code>auth status</code> — that is <code>list --probe</code>'s job.</li>
+</ul>
+<h3 id="6-7-credential-source-flag">6.7 <code>--credential-source</code> flag</h3>
+<ul>
+<li><strong>FR-CRED-15: Source override.</strong> The <code>--credential-source &lt;env|file|none&gt;</code> flag SHALL constrain which credential sources from §6.2 are consulted for the duration of the invocation:</li>
+<li><code>env</code> — only <code>TAPO_USERNAME</code> / <code>TAPO_PASSWORD</code> (skip per-device camera-account files, skip default credentials file). Useful in CI / containerized contexts.</li>
+<li><code>file</code> — only file-based sources (per-device camera-account file, per-device cloud-account override, default credentials file). Skip env vars. Useful when env vars are present but stale.</li>
+<li><code>none</code> — skip all sources; commands requiring credentials SHALL exit code 2. Useful for verifying that a cached pytapo session works without re-auth (paired with <code>auth status</code>).</li>
+<li>The flag overrides the default §6.2 resolution order; it does not relax the chmod-0600 enforcement (FR-CRED-2) or the partial-env-fallthrough rule (§6.2 note) — those are integrity invariants, not source choices.</li>
+<li>When unspecified, the default §6.2 resolution order applies.</li>
+</ul>
+<h3 id="6-8-pytapo-authentication-variants-informative">6.8 pytapo authentication variants (informative)</h3>
+<p>pytapo handles three authentication mechanisms across the Tapo firmware fleet:</p>
+<p>1. <strong>Legacy POST + cookie</strong> — older firmware (pre-2023, common on C100/C200/TC55-era builds). Returns a session cookie; pytapo persists it in the state blob. 2. <strong>KLAP-style</strong> — TP-Link's KLAP handshake protocol introduced in mid-2023 firmware on C2xx and Cxx0 series. Uses a per-session derived key; pytapo persists handshake state. 3. <strong>Encrypted / SSE login</strong> — current (2024+) firmware on C225 and other newly-released models, using server-sent-events for an authenticated push channel and a different handshake.</p>
+<p><code>tapo-cli</code> does <strong>NOT</strong> branch on these variants — the cache schema (FR-CRED-9) is an opaque pytapo state blob, and library-version-keyed invalidation handles forward-compat. This subsection documents what the underlying library is doing so that future contributors understand why cache schemas appear to change without our intervention.</p>
+<h3 id="6-9-config-show-redaction-informative">6.9 <code>config show</code> redaction (informative)</h3>
+<p>Per FR-54d, passwords in <code>config show</code> output are redacted to <code>***</code>. There is no mechanism in v1 to display the cleartext credential — to inspect a credential file, read it directly with <code>cat</code> (the file is chmod 0600 and visible only to its owner). This keeps screenshots and pasted-output from leaking secrets.</p>
+<p>---</p>
+<h2 id="7-non-functional-requirements">7. Non-Functional Requirements</h2>
+<h3 id="7-1-performance">7.1 Performance</h3>
+<p>Targets assume a wired LAN or 5GHz Wi-Fi with &lt;50ms RTT to the camera. Mesh Wi-Fi or distant access points are not contractual.</p>
+<table><thead><tr><th>Metric</th><th>Target</th></tr></thead><tbody>
+<tr><td>Discovery (WS-Discovery)</td><td>&lt; 5 seconds with default timeout</td></tr>
+<tr><td>Discovery (<code>--scan</code> /24 subnet)</td><td>&lt; 30 seconds with default timeout</td></tr>
+<tr><td>Single-camera control command (cached pytapo session)</td><td>&lt; 800ms p95</td></tr>
+<tr><td>Single-camera control command (cold pytapo handshake)</td><td>&lt; 3000ms p95</td></tr>
+<tr><td><code>snapshot</code> via pytapo native</td><td>&lt; 2000ms p95</td></tr>
+<tr><td><code>snapshot</code> via ONVIF fallback</td><td>&lt; 3500ms p95</td></tr>
+<tr><td><code>snapshot</code> via ffmpeg-from-RTSP fallback</td><td>&lt; 5000ms p95</td></tr>
+<tr><td><code>stream</code> URL emission (no I/O)</td><td>&lt; 200ms</td></tr>
+<tr><td>Cold CLI startup (no command, just <code>--help</code>)</td><td>&lt; 250ms</td></tr>
+</tbody></table>
+<h3 id="7-2-determinism">7.2 Determinism</h3>
+<ul>
+<li>Commands SHALL be idempotent where physically possible (privacy enable/enable/enable is the same as one). PTZ verbs are explicitly NOT idempotent (FR-17b).</li>
+<li>Identical input SHALL produce identical output structure (JSON key set is stable).</li>
+<li>No interactive prompts when stdin/stdout are not ttys (except <code>reboot</code> which requires <code>--yes</code> in non-tty mode per FR-38; <code>--quiet</code> implies <code>--yes</code> for <code>reboot</code>).</li>
+<li><strong>All emitted timestamps SHALL be RFC 3339 in UTC with the literal <code>Z</code> suffix.</strong> No local time, no offsets other than <code>Z</code>. This applies to <code>motion history</code>, <code>auth status</code>, <code>Camera.last_seen</code>, JSONL <code>result.*</code> payloads, and any future timestamp field.</li>
+<li><strong>Multi-record output SHALL be sorted deterministically.</strong> Default sort is by <code>target</code> ascending in the resolved-config order (the order aliases appear in the config file's <code>[devices.*]</code> blocks), with ties broken by event timestamp ascending. For motion history the only sort is timestamp ascending (FR-25c) since it is single-target.</li>
+<li><strong>Numeric fields SHALL be JSON numbers</strong>, not strings — durations, counts, byte sizes, exit codes, step values, etc. The only stringly-typed numeric is when a device returns a non-finite or non-numeric token; in that case the field SHALL be <code>null</code> and an INFO line on stderr SHALL note the device's raw response.</li>
+</ul>
+<h3 id="7-3-observability">7.3 Observability</h3>
+<ul>
+<li><code>-v</code> enables INFO-level structured logs to stderr</li>
+<li><code>-vv</code> enables DEBUG-level logs including raw protocol envelopes (with credentials redacted)</li>
+<li>All log lines in verbose mode are single-line JSON</li>
+<li>Optional file logging: when <code>[logging] file = "&lt;path&gt;"</code> is set in config, JSON log lines SHALL be tee'd there (append, line-buffered)</li>
+<li>File logging SHALL NOT rotate in v1</li>
+</ul>
+<h3 id="7-4-portability">7.4 Portability</h3>
+<ul>
+<li>Supported platforms: macOS 13+ (Apple Silicon and Intel), Linux x86_64 and arm64</li>
+<li>Python 3.11+ required (subject to pytapo's actual minimum at install time — see §4.4)</li>
+<li>ffmpeg required on <code>PATH</code> for snapshot tier-3 fallback and the <code>record</code> verb</li>
+<li>No Windows support in v1</li>
+</ul>
+<h3 id="7-5-network-model">7.5 Network model</h3>
+<ul>
+<li>All <code>tapo-cli</code> operations SHALL be fully local-network. The CLI SHALL NOT make outbound connections to TP-Link servers under any code path.</li>
+<li>DNS unreachable SHALL NOT block any operation.</li>
+<li>A camera unreachable on the LAN SHALL exit code 3 (network error) — not code 2 (auth) — even if the failure mode is a TLS handshake reset.</li>
+</ul>
+<p>---</p>
+<h2 id="8-cli-surface">8. CLI Surface</h2>
+<h3 id="8-1-verb-summary">8.1 Verb summary</h3>
+<table><thead><tr><th>Verb</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>discover</code></td><td>WS-Discovery + optional subnet-scan fallback</td></tr>
+<tr><td><code>list</code></td><td>Print configured aliases and groups</td></tr>
+<tr><td><code>info</code></td><td>Show full state of one camera</td></tr>
+<tr><td><code>snapshot</code></td><td>Pull a JPEG still to a file (three-mechanism fallback)</td></tr>
+<tr><td><code>stream</code></td><td>Print an RTSP URL on stdout</td></tr>
+<tr><td><code>record</code></td><td>Spawn ffmpeg subprocess for one-shot RTSP recording (requires <code>--duration</code> or <code>--max-bytes</code> in non-tty mode; FR-13a)</td></tr>
+<tr><td><code>ptz</code></td><td>Pan/tilt/zoom and stop sub-verbs</td></tr>
+<tr><td><code>preset</code></td><td>List / goto / save / delete saved positions</td></tr>
+<tr><td><code>motion</code></td><td>Motion-detection enable / disable / status / history</td></tr>
+<tr><td><code>alarm</code></td><td>Siren enable / disable / trigger / status</td></tr>
+<tr><td><code>led</code></td><td>Status LED on / off / status</td></tr>
+<tr><td><code>privacy</code></td><td>Privacy mode enable / disable / status</td></tr>
+<tr><td><code>night-vision</code></td><td>auto / on / off / ir-only</td></tr>
+<tr><td><code>audio</code></td><td>volume / mic / speaker / tts</td></tr>
+<tr><td><code>osd</code></td><td>On-screen-display configuration</td></tr>
+<tr><td><code>set</code></td><td>Image flip, timezone (Phase 1 set-flag set; more in Phase 2)</td></tr>
+<tr><td><code>reboot</code></td><td>Reboot camera (interactive confirm or <code>--yes</code>)</td></tr>
+<tr><td><code>groups</code></td><td>List local group definitions</td></tr>
+<tr><td><code>batch</code></td><td>Execute commands from file or stdin</td></tr>
+<tr><td><code>config</code></td><td><code>show</code> (effective config) and <code>validate</code></td></tr>
+<tr><td><code>auth</code></td><td>Session-cache management (<code>flush</code>, <code>status</code>)</td></tr>
+</tbody></table>
+<h3 id="8-2-target-syntax">8.2 Target syntax</h3>
+<p>A target is one of:</p>
+<ul>
+<li>An <strong>alias</strong> defined in config (e.g., <code>front-door</code>)</li>
+<li>An <strong>IP address</strong> (e.g., <code>192.168.1.42</code>)</li>
+<li>A <strong>MAC address</strong> (e.g., <code>AA:BB:CC:DD:EE:FF</code>)</li>
+<li>A <strong>group name</strong> prefixed with <code>@</code> (e.g., <code>@perimeter-cams</code>)</li>
+<li>The literal <code>all</code> to target every alias in config</li>
+</ul>
+<p>Group targets are forbidden for <code>stream</code> and <code>record</code> per FR-43c.</p>
+<h3 id="8-3-common-flags">8.3 Common flags</h3>
+<table><thead><tr><th>Flag</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>--json</code></td><td>Pretty JSON output</td></tr>
+<tr><td><code>--jsonl</code></td><td>Newline-delimited JSON output</td></tr>
+<tr><td><code>--quiet</code></td><td>Suppress stdout (does not apply to <code>snapshot --output -</code> where JPEG bytes ARE the stdout payload — see FR-11d)</td></tr>
+<tr><td><code>--timeout &lt;seconds&gt;</code></td><td>Per-operation timeout, default 5 (per-verb defaults override; see §7.1). For <code>snapshot</code> this is the <strong>total</strong> budget across all three mechanisms (FR-11a.3).</td></tr>
+<tr><td><code>--config &lt;path&gt;</code></td><td>Use a non-default config file</td></tr>
+<tr><td>`--credential-source &lt;env\</td><td>file\</td><td>none&gt;`</td><td>Constrain credential sources for this invocation (FR-CRED-15). Overrides §6.2 resolution order.</td></tr>
+<tr><td><code>--concurrency N</code></td><td>Override <code>[defaults] concurrency</code> for this invocation only</td></tr>
+<tr><td><code>--probe</code></td><td>On <code>list</code>, additionally probe each device for liveness</td></tr>
+<tr><td><code>--online-only</code></td><td>On <code>list</code>, imply <code>--probe</code> and filter to devices that responded (FR-8)</td></tr>
+<tr><td><code>--target-network &lt;CIDR&gt;</code></td><td>Constrain <code>discover</code> to a specific subnet (exits 6 if no local interface matches; FR-5b)</td></tr>
+<tr><td><code>-v</code>, <code>-vv</code></td><td>Verbose / very verbose stderr logging</td></tr>
+<tr><td><code>--yes</code></td><td>Bypass interactive confirmation (currently only <code>reboot</code>; <code>--quiet</code> implies <code>--yes</code>)</td></tr>
+</tbody></table>
+<h3 id="8-4-worked-examples">8.4 Worked examples</h3>
+<pre><code class="lang-text"># Discover everything ONVIF-capable on the LAN
+$ tapo-cli discover
+front-door     192.168.1.42   AA:BB:CC:DD:EE:01  D230     true
+backyard       192.168.1.51   AA:BB:CC:DD:EE:02  C320WS   true
+office-cam     192.168.1.78   AA:BB:CC:DD:EE:03  C225     true
+
+# JSON form
+$ tapo-cli discover --json
+[
+  { "ip": "192.168.1.42", "mac": "...", "model": "D230", "supported": true, "firmware": "..." },
+  ...
+]
+
+# Pull a still from a configured alias
+$ tapo-cli snapshot front-door --output /tmp/door.jpg
+$ tapo-cli snapshot front-door --output /tmp/door.jpg --json
+{"target":"front-door","output":"/tmp/door.jpg","mechanism":"pytapo","bytes":48201}
+
+# Get the RTSP URL — pipe to ffmpeg or mpv
+$ tapo-cli stream office-cam
+rtsp://camuser:campass@192.168.1.78:554/stream1
+
+$ tapo-cli stream office-cam --lens telephoto
+rtsp://camuser:campass@192.168.1.78:554/stream6
+
+$ tapo-cli stream office-cam | xargs mpv
+
+# One-shot 30s recording via ffmpeg subprocess
+$ tapo-cli record office-cam --duration 30 --output /tmp/cam.mp4
+
+# Stream URL with credentials redacted, exec'd into ffmpeg
+$ tapo-cli stream office-cam --credentials-via-env --exec ffmpeg -i '{}' -c copy /tmp/cam.mp4
+
+# Move the camera and save a preset
+$ tapo-cli ptz office-cam pan left --step 15
+$ tapo-cli ptz office-cam tilt up --step 5
+$ tapo-cli preset office-cam save desk-view
+
+# Recall a preset
+$ tapo-cli preset office-cam goto desk-view
+
+# Motion detection
+$ tapo-cli motion office-cam enable
+$ tapo-cli motion office-cam history --since '2026-04-28T00:00:00Z' --jsonl
+{"ts":"2026-04-28T08:14:02Z","event_type":"motion","region":"full","has_clip":true}
+{"ts":"2026-04-28T09:31:55Z","event_type":"motion","region":"full","has_clip":true}
+
+# Trigger the siren for 5 seconds
+$ tapo-cli alarm office-cam trigger --duration 5
+
+# Privacy mode on (lens cover engages on supported models)
+$ tapo-cli privacy office-cam enable
+
+# Set night vision to ir-only
+$ tapo-cli night-vision office-cam ir-only
+
+# OSD overlay
+$ tapo-cli osd office-cam set --text "FRONT DOOR" --position bl --show-time true
+
+# Audio TTS through the speaker (C520WS)
+$ tapo-cli audio backyard tts --text "The package has arrived"
+
+# Inspect cached pytapo sessions
+$ tapo-cli auth status --json
+[
+  {"alias":"office-cam","mac":"AA:BB:CC:DD:EE:03","cache_path":"/Users/dan/.config/tapo-cli/.tokens/AABBCCDDEE03.json","mtime":"2026-04-28T18:02:14Z","expires_at":"2026-05-28T18:02:14Z","bytes":412,"pytapo_version":"3.4.13","cloud_account":true,"camera_account":true},
+  {"alias":"front-door","mac":"AA:BB:CC:DD:EE:01","cache_path":"/Users/dan/.config/tapo-cli/.tokens/AABBCCDDEE01.json","mtime":"2026-04-28T17:42:11Z","expires_at":null,"bytes":412,"pytapo_version":"3.4.13","cloud_account":true,"camera_account":true}
+]
+
+# Flush all sessions
+$ tapo-cli auth flush
+
+# Show effective config
+$ tapo-cli config show
+
+# Lint a candidate config
+$ tapo-cli config validate /tmp/new-config.toml
+
+# Run a list of commands from a file
+$ cat night.batch
+privacy front-door enable
+privacy office-cam enable
+night-vision backyard ir-only
+$ tapo-cli batch --file night.batch --jsonl</code></pre>
+<p>---</p>
+<h2 id="9-configuration-file">9. Configuration File</h2>
+<h3 id="9-1-location-and-format">9.1 Location and format</h3>
+<p>Default path: <code>~/.config/tapo-cli/config.toml</code> (override via <code>--config</code> or <code>TAPO_CLI_CONFIG</code>).</p>
+<p>Format: TOML.</p>
+<h3 id="9-2-schema">9.2 Schema</h3>
+<table><thead><tr><th>Section</th><th>Field</th><th>Type</th><th>Default</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>[defaults]</code></td><td><code>timeout_seconds</code></td><td>int</td><td>5</td><td>Per-operation timeout</td></tr>
+<tr><td><code>[defaults]</code></td><td><code>concurrency</code></td><td>int</td><td>5</td><td>Max parallel device ops in groups/batch</td></tr>
+<tr><td><code>[defaults]</code></td><td><code>output_format</code></td><td>string</td><td><code>auto</code></td><td><code>auto</code>/<code>text</code>/<code>json</code>/<code>jsonl</code></td></tr>
+<tr><td><code>[credentials]</code></td><td><code>file_path</code></td><td>string</td><td><code>~/.config/kasa-cli/credentials</code></td><td>Default cloud-account credentials (shared with kasa-cli; FR-CRED-3.1). Set to <code>~/.config/tapo-cli/credentials</code> to use a tapo-only file.</td></tr>
+<tr><td><code>[ffmpeg]</code></td><td><code>path</code></td><td>string</td><td><code>ffmpeg</code> (resolved on <code>PATH</code>)</td><td>Override ffmpeg binary path</td></tr>
+<tr><td><code>[logging]</code></td><td><code>file</code></td><td>string</td><td>—</td><td>Optional file path for JSON log tee</td></tr>
+<tr><td><code>[devices.&lt;alias&gt;]</code></td><td><code>ip</code></td><td>string</td><td>—</td><td>Static IP (skips discovery)</td></tr>
+<tr><td><code>[devices.&lt;alias&gt;]</code></td><td><code>mac</code></td><td>string</td><td>—</td><td>MAC for stable identification</td></tr>
+<tr><td><code>[devices.&lt;alias&gt;]</code></td><td><code>model</code></td><td>string</td><td>—</td><td>Optional; verifies against probe</td></tr>
+<tr><td><code>[devices.&lt;alias&gt;]</code></td><td><code>credential_file</code></td><td>string</td><td>—</td><td>Per-device cloud-account override</td></tr>
+<tr><td><code>[devices.&lt;alias&gt;]</code></td><td><code>camera_account_file</code></td><td>string</td><td>—</td><td>Per-device camera-account file (REQUIRED for <code>stream</code>/<code>record</code>)</td></tr>
+<tr><td><code>[groups]</code></td><td><code>&lt;name&gt;</code></td><td>string[]</td><td>—</td><td>Array of alias names</td></tr>
+</tbody></table>
+<h3 id="9-3-complete-example">9.3 Complete example</h3>
+<pre><code class="lang-toml"># ~/.config/tapo-cli/config.toml
+
+[defaults]
+timeout_seconds = 5
+concurrency = 5
+output_format = "auto"
+
+[credentials]
+# Default is ~/.config/kasa-cli/credentials (shared with kasa-cli, same TP-Link
+# cloud account, same JSON v1 format). Override here only if you maintain a
+# separate Tapo-only cloud account; tapo-cli will then ignore the shared file.
+file_path = "~/.config/kasa-cli/credentials"
+
+[ffmpeg]
+# Optional. Default is whatever is on PATH.
+# path = "/opt/homebrew/bin/ffmpeg"
+
+[logging]
+# Optional.
+# file = "~/.local/state/tapo-cli/log"
+
+[devices.front-door]
+ip = "192.168.1.42"
+mac = "AA:BB:CC:DD:EE:01"
+model = "D230"
+camera_account_file = "~/.config/tapo-cli/camera-accounts/front-door.json"
+
+[devices.backyard]
+ip = "192.168.1.51"
+mac = "AA:BB:CC:DD:EE:02"
+model = "C320WS"
+camera_account_file = "~/.config/tapo-cli/camera-accounts/backyard.json"
+
+[devices.office-cam]
+ip = "192.168.1.78"
+mac = "AA:BB:CC:DD:EE:03"
+model = "C225"
+camera_account_file = "~/.config/tapo-cli/camera-accounts/office-cam.json"
+
+[groups]
+perimeter-cams = ["front-door", "backyard"]
+all-cams       = ["front-door", "backyard", "office-cam"]</code></pre>
+<h3 id="9-4-config-validation">9.4 Config validation</h3>
+<p><code>tapo-cli config validate</code> SHALL parse the file, resolve every alias-to-device reference, resolve every group-to-alias reference, verify referenced credential and camera-account files exist with chmod 0600, and exit 0 only if all checks pass.</p>
+<p>---</p>
+<h2 id="10-data-model">10. Data Model</h2>
+<h3 id="10-1-camera">10.1 Camera</h3>
+<pre><code class="lang-text">Camera {
+  alias              : string         # human-friendly name (config-resolved or device-stored)
+  ip                 : string         # IPv4 dotted quad
+  mac                : string         # uppercase colon-separated
+  model              : string         # e.g., "C225", "D230"
+  hardware_version   : string
+  firmware_version   : string
+  supported          : bool           # true if model is on the v1 verified list (§3.3)
+  features           : string[]       # subset of ["ptz", "zoom", "audio", "tts", "alarm", "led", "privacy", "ir", "dual-lens", "doorbell"]
+  motion_enabled     : bool
+  privacy_enabled    : bool
+  led_state          : "on" | "off"
+  night_vision_mode  : "auto" | "on" | "off" | "ir-only" | "unknown"
+  has_camera_account : bool           # config-derived (camera_account_file is set and readable)
+  last_seen          : RFC3339 string  # UTC, 'Z' suffix
+}</code></pre>
+<h3 id="10-2-stream">10.2 Stream</h3>
+<pre><code class="lang-text">Stream {
+  target    : string         # alias
+  protocol  : "rtsp"
+  url       : string         # rtsp://user:pass@ip:port/streamN
+  lens      : "wide" | "telephoto"
+  quality   : "hd" | "sd"    # stream1/6 = hd, stream2/7 = sd
+}</code></pre>
+<h3 id="10-3-motionevent">10.3 MotionEvent</h3>
+<pre><code class="lang-text">MotionEvent {
+  ts          : RFC3339 string  # UTC, 'Z' suffix (FR-25a, §7.2)
+  alias       : string
+  event_type  : "motion" | "person" | "vehicle" | "doorbell-press" | "unknown"
+  region      : string?        # device-specific region label, often "full"
+  has_clip    : bool            # whether on-camera SD-card clip exists
+  duration_s  : number?         # event duration if reported by device
+}</code></pre>
+<h3 id="10-4-preset">10.4 Preset</h3>
+<pre><code class="lang-text">Preset {
+  id     : int                # device-assigned
+  name   : string
+  pan    : number?            # degrees, if reported
+  tilt   : number?            # degrees, if reported
+  zoom   : number?            # device units, if reported
+}</code></pre>
+<h3 id="10-5-sessionmetadata-cache">10.5 SessionMetadata (cache)</h3>
+<pre><code class="lang-text">SessionMetadata {
+  alias              : string?         # null if MAC has no alias mapping
+  mac                : string
+  cache_path         : string          # absolute path to the .tokens/&lt;mac&gt;.json file
+  mtime              : RFC3339 string  # cache file modification time, UTC 'Z'
+  expires_at         : RFC3339 string? # null if the underlying pytapo state doesn't expose an expiry
+  bytes              : int
+  pytapo_version     : string          # pytapo version that wrote the cache (FR-CRED-9)
+  cloud_account      : bool
+  camera_account     : bool
+}</code></pre>
+<p>---</p>
+<h2 id="11-error-model-and-exit-codes">11. Error Model and Exit Codes</h2>
+<h3 id="11-1-exit-code-table">11.1 Exit code table</h3>
+<table><thead><tr><th>Code</th><th>Meaning</th><th>When</th></tr></thead><tbody>
+<tr><td>0</td><td>Success</td><td>Operation completed; for batch/group, <strong>every</strong> sub-op succeeded</td></tr>
+<tr><td>1</td><td>Device error</td><td>Camera returned an error response (non-auth, non-network); all three snapshot mechanisms failed without auth-rejection (FR-11c); device firmware rejects an OSD codepoint (FR-37b)</td></tr>
+<tr><td>2</td><td>Authentication error</td><td>Cloud-account or camera-account auth failed; missing credentials when no other source is configured; credentials file chmod-mode too permissive (FR-CRED-2); no <code>camera_account_file</code> for an RTSP-using verb (FR-CRED-7); auth-rejection at any snapshot tier (FR-11a.2)</td></tr>
+<tr><td>3</td><td>Network error</td><td>Timeout, connection refused, no route, multicast bind failure, camera unreachable on LAN; concurrent-lock acquisition timeout (FR-CRED-13)</td></tr>
+<tr><td>4</td><td>Device not found</td><td>Alias unknown in config, IP unreachable, MAC not on LAN, unknown preset name</td></tr>
+<tr><td>5</td><td>Unsupported feature</td><td>Verb/flag combo not supported by target model or firmware (e.g., PTZ on a non-PTZ camera per the §3.3.1 matrix, <code>tts</code> on a model without speaker, HLS protocol, ONVIF GetProfiles on a model without ONVIF)</td></tr>
+<tr><td>6</td><td>Config error</td><td>Config file missing when <code>--config</code>/<code>TAPO_CLI_CONFIG</code> was set; invalid TOML; unresolvable references; unknown keys; ffmpeg not on PATH <strong>including the snapshot tier-3 fallback case</strong> (FR-11a.4); <code>--target-network &lt;CIDR&gt;</code> with no matching local interface (FR-5b)</td></tr>
+<tr><td>7</td><td>Partial batch/group failure</td><td>≥1 sub-op succeeded AND ≥1 sub-op failed</td></tr>
+<tr><td>64</td><td>Usage error</td><td>Invalid CLI invocation: missing required arg, mutually-exclusive flags, group target on <code>stream</code>/<code>record</code>, <code>record</code> in non-tty without <code>--duration</code>/<code>--max-bytes</code> (FR-13a), <code>osd</code> text &gt;32 codepoints (FR-37a), <code>reboot</code> non-tty without <code>--yes</code>, <code>--snapshot-budget</code> sum &gt; <code>--timeout</code> (FR-11a.3), <code>--output -</code> with <code>--json</code>/<code>--jsonl</code> (FR-11d)</td></tr>
+<tr><td>130</td><td>SIGINT</td><td>Ctrl-C during execution; partial JSONL stream emitted with trailing <code>{"event":"interrupted",...}</code> line; ffmpeg child (if any) gets forwarded SIGINT</td></tr>
+<tr><td>143</td><td>SIGTERM</td><td>Same partial-result + interrupted-line behavior as 130</td></tr>
+</tbody></table>
+<p><strong>Disambiguation notes (v1.1):</strong></p>
+<ul>
+<li><strong>Missing credentials</strong> (no source configured at all) → exit <strong>2</strong> (auth, not config). Rationale: the user has not configured how to authenticate; this is an auth-domain error even though a config field is involved.</li>
+<li><strong>Credentials file chmod violation</strong> (file exists but mode is more permissive than 0600) → exit <strong>2</strong> (auth). It is a credential-source integrity failure, not a config-syntax failure.</li>
+<li><strong>Snapshot reaches tier 3 and ffmpeg is missing on <code>PATH</code></strong> → exit <strong>6</strong> (config, not device). The CLI cannot complete a request because a documented dependency is absent — name it explicitly. Distinct from "device returned an error" which is exit 1.</li>
+<li><strong><code>--target-network &lt;CIDR&gt;</code> with no matching local interface</strong> → exit <strong>6</strong> (config). Naming the available interface CIDRs in the error message is mandatory (FR-5b).</li>
+</ul>
+<h3 id="11-2-structured-error-object-stderr">11.2 Structured error object (stderr)</h3>
+<pre><code class="lang-json">{
+  "error": "auth_failed",
+  "exit_code": 2,
+  "target": "front-door",
+  "credential": "camera_account",
+  "message": "RTSP auth rejected; check camera_account_file",
+  "hint": "Create a camera account in the Tapo app: Settings &gt; Advanced settings &gt; Camera account, then update camera_account_file in config"
+}</code></pre>
+<p>The <code>error</code> enum is closed and stable. Tooling MAY pattern-match on it. The <code>credential</code> field appears only on auth errors and names which credential failed (<code>cloud_account</code> | <code>camera_account</code>).</p>
+<p>---</p>
+<h2 id="12-testing-strategy">12. Testing Strategy</h2>
+<h3 id="12-1-unit-tests">12.1 Unit tests</h3>
+<ul>
+<li>Mock pytapo implementations covering: outdoor non-PTZ + siren (C320WS), outdoor TC-series (TC85), indoor non-PTZ (C100), indoor PTZ (C200), dual-lens with telephoto path (C225 in BOTH wide-only AND telephoto modes), and a wired doorbell (D230). For parity with kasa-cli's per-family mocks, each fixture set SHALL exercise its full §3.3.1 capability row.</li>
+<li>Mock onvif-zeep-async responses for WS-Discovery and <code>GetSnapshotUri</code></li>
+<li>Mock ffmpeg subprocess invocation (use <code>subprocess.run</code> patching) for snapshot-fallback and recording paths</li>
+<li>Config parser tests with valid configs, invalid TOML, dangling alias refs, dangling group refs, missing <code>camera_account_file</code>, missing <code>version</code> in credentials file</li>
+<li>Output formatter tests asserting JSON key stability across mock cameras, including: list-view subset (FR-6b), full Camera record (FR-10), MotionEvent records, Preset records, Stream records, structured error (§11.2)</li>
+<li>Exit-code matrix tests: every exit code 0/1/2/3/4/5/6/7/64/130/143 SHALL be reachable by at least one test</li>
+<li>Snapshot fallback test: mock pytapo failure → mock ONVIF success → assert <code>mechanism: "onvif"</code> in output</li>
+<li>Snapshot fallback test: mock pytapo failure → mock ONVIF failure → mock ffmpeg success → assert <code>mechanism: "ffmpeg"</code></li>
+<li>Snapshot fallback test: all three fail → assert exit code 1 with structured error listing each</li>
+<li>Concurrency lock test (FR-CRED-13): two concurrent <code>tapo-cli</code> invocations against the same camera serialize on flock</li>
+<li>Credential resolver tests covering all three sources for cloud account AND the per-device camera-account file path</li>
+<li>Signal handling test: SIGINT during a 10-element batch SHALL produce ≤10 result lines plus the <code>{"event":"interrupted",...}</code> line and exit 130</li>
+<li>Signal handling test: SIGINT during <code>record</code> SHALL forward SIGINT to ffmpeg child and wait up to 5s for finalization</li>
+<li>Group target rejected by <code>stream</code>/<code>record</code> (FR-43c) SHALL exit 64</li>
+</ul>
+<h3 id="12-2-integration-tests">12.2 Integration tests</h3>
+<p>Gated on environment variable <code>TAPO_TEST_DEVICE_IP</code>. When unset, integration tests are skipped (CI default). When set, the test suite runs against a real camera on the operator's LAN. CI never sets this variable.</p>
+<p>A second variable <code>TAPO_TEST_DOORBELL_IP</code> enables doorbell-specific integration tests for users who own one. A third variable <code>TAPO_TEST_PTZ_DEVICE_IP</code> enables PTZ-specific tests.</p>
+<h3 id="12-3-fixture-corpus">12.3 Fixture corpus</h3>
+<p>Capture real device responses (with MACs, IPs, and credentials redacted) in <code>tests/fixtures/</code> to reproduce protocol-level edge cases without requiring hardware. ONVIF SOAP envelopes captured against a real C225 should suffice for most tests.</p>
+<p>---</p>
+<h2 id="13-distribution-and-install">13. Distribution and Install</h2>
+<h3 id="13-1-recommended">13.1 Recommended</h3>
+<pre><code class="lang-text">uv tool install git+ssh://git@github.com/agileguy/tapo-cli</code></pre>
+<p>Rationale: this is a personal tool. Installing directly from the git repo via <code>uv tool</code> keeps the install pattern Dan already uses for <code>kasa-cli</code>, <code>ghost-cli</code>, <code>pypi-cli</code>, <code>resend-cli</code>, etc. (isolated venv, entry point on PATH, no system-Python conflicts). Updates are <code>uv tool upgrade tapo-cli</code>.</p>
+<h3 id="13-2-alternatives-considered">13.2 Alternatives considered</h3>
+<ul>
+<li><strong>Publish to PyPI</strong> — rejected for v1. Personal scope.</li>
+<li><code>pipx install git+...</code> — works identically but Dan's stack guidance prefers <code>uv</code>.</li>
+<li><code>brew install tapo-cli</code> — would require maintaining a Homebrew tap; not warranted for a single-user tool.</li>
+<li>Single-file binary via PyInstaller — increases binary size dramatically and complicates ffmpeg subprocess handling; not recommended.</li>
+</ul>
+<h3 id="13-3-versioning">13.3 Versioning</h3>
+<p>Tag releases as <code>vX.Y.Z</code> in git. <code>uv tool install git+ssh://...@vX.Y.Z</code> pins to a tag. The <code>pyproject.toml</code> SHALL pin <code>pytapo</code> to a known-good git SHA (not a floating <code>&gt;=</code> constraint) due to the HA 2025.11 / pytapo 3.3.51 incident; rolling forward requires an explicit <code>tapo-cli</code> release. Example pyproject syntax: <code>pytapo @ git+https://github.com/JurajNyiri/pytapo@&lt;40-char-sha&gt;</code>.</p>
+<p>---</p>
+<h2 id="14-out-of-scope">14. Out of Scope</h2>
+<p>The following are <strong>explicitly excluded</strong> from v1:</p>
+<ul>
+<li><strong>Live video display in the terminal.</strong> Use <code>mpv</code>, <code>ffplay</code>, or <code>vlc</code> downstream of <code>tapo-cli stream</code>.</li>
+<li><strong>Motion-event video clip downloads.</strong> Vendor-specific binary protocol; pytapo has experimental support but it's brittle. <strong>Low priority not impossible</strong> — a future SRD may revisit if the protocol stabilizes.</li>
+<li><strong>Two-way real-time audio.</strong> Would require WebRTC or SIP. Out of scope at all phases of this SRD. <code>audio tts</code> is one-shot send only.</li>
+<li><strong>Battery-doorbell third-party integration.</strong> Tapo D210 and D235 in battery mode cannot accept a camera account (verified against HA-Tapo-Control discussions #739 and #794). Wired/always-on operation only.</li>
+<li><strong>Doorbell event-stream subscription.</strong> Doorbell-press events SHALL surface in <code>motion history</code> output (FR-25 with <code>event_type: "doorbell-press"</code>) but a long-running event-subscription verb is deferred. Use the cron + <code>motion history --since</code> idiom.</li>
+<li><strong>Kasa plug/bulb/strip/switch support.</strong> That's <code>kasa-cli</code>'s lane.</li>
+<li><strong>Matter and Thread devices.</strong> Tapo cameras don't speak either.</li>
+<li><strong>Cloud relay control.</strong> Local LAN only.</li>
+<li><strong>NVR / DVR functionality.</strong> Long-running multi-day recording, retention policies, motion-triggered DVR — wrong tool. Use Frigate, Shinobi, Synology Surveillance Station, etc., downstream of <code>tapo-cli stream</code>.</li>
+<li><strong>HLS protocol output.</strong> Tapo cameras don't natively serve HLS. <code>--protocol hls</code> SHALL exit code 5 in v1; users wanting HLS should run an ffmpeg transcoder.</li>
+<li><strong>Automation rules engine.</strong> "If motion at front-door, turn on porch-light" belongs in Home Assistant or a cron job that pipes <code>motion history</code> into <code>kasa-cli</code>.</li>
+<li><strong>GUI dashboard.</strong> This is a CLI.</li>
+<li><strong>Firmware updates.</strong> Use the Tapo app.</li>
+<li><strong>Wi-Fi provisioning.</strong> Use the Tapo app.</li>
+<li><strong>Multi-network discovery via mDNS reflectors.</strong> Single-LAN broadcast/scan only.</li>
+<li><strong>Group config mutation.</strong> v1 <code>groups</code> sub-verb is <code>list</code> only. Add/remove are deferred.</li>
+<li><strong>Comment-preserving TOML round-trip on config writes.</strong> v1 does not write user config files.</li>
+<li><strong>Camera-account creation from the CLI.</strong> <strong>Deferred — protocol exists, low priority.</strong> TP-Link's Tapo app uses a documented HTTPS verb to create a camera account on a device; pytapo could in principle expose it. The reason this is deferred rather than impossible is that the create-camera-account flow is rare enough (run once per device, ever) that the manual app step is acceptable. A future SRD may add <code>tapo-cli auth setup-camera-account</code> if operators ask for it.</li>
+<li><strong>Continuous segmented recording.</strong> The <code>record</code> verb is one-shot. No <code>--segment 1h</code> flag.</li>
+<li><strong>PTZ patrol / auto-track scheduling.</strong> Per-device feature, not a CLI feature.</li>
+<li><strong>Image-quality tuning beyond <code>--image-flip</code>.</strong> HDR, noise cancelling, sharpness, exposure — not in v1's <code>set</code> verb. Phase 2+ candidates if requested.</li>
+</ul>
+<p>---</p>
+<h2 id="15-resolved-decisions">15. Resolved Decisions</h2>
+<p>The architectural decisions surfaced during research and design are recorded here for traceability.</p>
+<table><thead><tr><th>#</th><th>Decision area</th><th>Outcome</th></tr></thead><tbody>
+<tr><td>1</td><td><strong>Library strategy</strong></td><td>Hybrid wrap. pytapo for control, onvif-zeep-async for discovery + snapshot fallback, ffmpeg subprocess for snapshot-of-last-resort and recording. Reject single-stack reimplementation.</td></tr>
+<tr><td>2</td><td><strong>Implementation language</strong></td><td>Python 3.11+ with <code>uv</code>. Matches <code>kasa-cli</code>. pytapo claims 3.13 minimum; verify in Phase 1 CI and adjust <code>pyproject.toml</code> minimum if needed.</td></tr>
+<tr><td>3</td><td><strong>Stream verb behavior</strong></td><td>Emit RTSP URL on stdout. Do not decode, transcode, or display video. Recording is a separate verb (<code>record</code>) with mandatory <code>--duration</code>/<code>--max-bytes</code> cap in non-tty mode (FR-13a).</td></tr>
+<tr><td>4</td><td><strong>Snapshot mechanism</strong></td><td>Three-mechanism fallback chain: pytapo → ONVIF <code>GetSnapshotUri</code> → ffmpeg single-frame from RTSP. Emit <code>mechanism</code> in <code>--json</code> output for observability.</td></tr>
+<tr><td>5</td><td><strong>Discovery primary</strong></td><td>ONVIF WS-Discovery via <code>WSDiscovery</code> library. Subnet HTTPS-probe scan as <code>--scan</code> fallback. Manual config always wins.</td></tr>
+<tr><td>6</td><td><strong>Credential model</strong></td><td>Dual-credential. Cloud account default is <code>~/.config/kasa-cli/credentials</code> — shared with <code>kasa-cli</code>, same TP-Link cloud login, same v1 JSON format, read-only from this CLI (FR-CRED-3.1). Tapo-only override at <code>~/.config/tapo-cli/credentials</code> if a separate Tapo cloud account is desired. Camera account is per-device-mandatory in <code>[devices.&lt;alias&gt;] camera_account_file</code>. All credential files chmod 0600.</td></tr>
+<tr><td>7</td><td><strong>Battery-doorbell third-party support</strong></td><td>Out of scope. Wired/always-on doorbells only. D210/D235 in battery mode cannot accept a camera account.</td></tr>
+<tr><td>8</td><td><strong>Doorbell event subscription</strong></td><td>Deferred. v1 surfaces doorbell-press events through <code>motion history --event-type doorbell-press</code>. Long-running subscription verb is a future SRD.</td></tr>
+<tr><td>9</td><td><strong>Recording boundary</strong></td><td>One-shot only. ffmpeg as foreground child process. Lives and dies with the CLI invocation. SIGINT/SIGTERM forward to ffmpeg with 5s grace for MP4 finalization.</td></tr>
+<tr><td>10</td><td><strong>Stream/record group rejection</strong></td><td><code>stream</code> and <code>record</code> SHALL refuse group targets and exit 64. Per-device invocation only.</td></tr>
+<tr><td>11</td><td><strong>HLS support</strong></td><td>Deferred. v1 <code>--protocol hls</code> exits 5. Tapo cameras don't natively serve HLS; transcoding belongs in an external ffmpeg invocation.</td></tr>
+<tr><td>12</td><td><strong>Motion-clip download</strong></td><td>Deferred, possibly never. Vendor binary protocol; pytapo's support is experimental.</td></tr>
+<tr><td>13</td><td><strong>Two-way realtime audio</strong></td><td>Out of scope at all phases. <code>audio tts</code> is one-shot send only.</td></tr>
+<tr><td>14</td><td><strong>pytapo version pinning</strong></td><td>Pin to a git SHA in <code>pyproject.toml</code>, not <code>&gt;=3.4.13</code>. HA 2025.11 incident proves single-maintainer libs need explicit pinning. Roll forward requires a <code>tapo-cli</code> release.</td></tr>
+<tr><td>15</td><td><strong>Distribution</strong></td><td><code>uv tool install git+ssh://git@github.com/agileguy/tapo-cli</code>. Not published to PyPI.</td></tr>
+<tr><td>16</td><td><strong>Concurrency default</strong></td><td>5 parallel ops (lower than kasa-cli's 10) because camera control is heavier. Override per-command with <code>--concurrency N</code>.</td></tr>
+<tr><td>17</td><td><strong>Token cache location</strong></td><td><code>~/.config/tapo-cli/.tokens/</code> (co-located with config). Mirrors <code>kasa-cli</code> Decision 4.</td></tr>
+<tr><td>18</td><td><strong>Windows support</strong></td><td>Out of scope. macOS 13+ and Linux x86_64/arm64 only. WSL is the answer for Windows users.</td></tr>
+<tr><td>19</td><td><strong>Camera-account creation</strong></td><td>Out of scope. v1 consumes camera accounts; Tapo-app operation creates them. No <code>tapo-cli auth setup-camera-account</code> verb.</td></tr>
+<tr><td>20</td><td><strong>OSD text length</strong></td><td>Capped at 32 characters. Exits 64 if exceeded. (Conservative — actual device limit varies; 32 is the cross-model floor.)</td></tr>
+</tbody></table>
+<p>---</p>
+<h2 id="16-phase-plan">16. Phase Plan</h2>
+<h3 id="16-0-phase-0-hardware-smoke-test-gate-3-days">16.0 Phase 0 — Hardware Smoke-Test Gate (3 days)</h3>
+<p><strong>Deliverable:</strong> Empirical proof that the chosen pytapo SHA actually works against every camera the operator owns, plus a captured fixture corpus to feed §12.3.</p>
+<p>This phase ships <strong>no</strong> CLI code — only a smoke-test script and a pytapo SHA pin. Phases 1-3 do not start until Phase 0 passes. This de-risks every subsequent phase: if the chosen pytapo can't auth or can't snapshot on a real device, every later phase is built on sand.</p>
+<p>Tasks:</p>
+<ul>
+<li>Pin pytapo to a specific git SHA in a pre-MVP <code>pyproject.toml</code> skeleton.</li>
+<li>Write a smoke-test script (<code>scripts/smoke.py</code>) that, given a list of <code>(ip, camera-account-user, camera-account-pass)</code> tuples, exercises: pytapo <code>getBasicInfo</code>, pytapo <code>getStreamURL</code>, pytapo native snapshot (capture bytes), ONVIF <code>GetDeviceInformation</code>, ONVIF <code>GetProfiles</code>, ONVIF <code>GetSnapshotUri</code>, RTSP single-frame via ffmpeg.</li>
+<li>Run <code>scripts/smoke.py</code> against <strong>every camera the operator owns</strong> — Dan's deployment baseline plus any borrowed test units. Capture pass/fail per mechanism per device.</li>
+<li>Record protocol-level fixtures (<code>tests/fixtures/&lt;model&gt;-&lt;firmware&gt;.json</code> and <code>.xml</code> for ONVIF SOAP envelopes) for replay in Phase 1+ unit tests.</li>
+<li>Document any model that fails a tier — that model's row in the §3.3.1 capability matrix is updated, OR the model is moved to the "untested" row pending firmware-specific investigation.</li>
+</ul>
+<p><strong>Exit criteria for Phase 0</strong> (none of Phases 1-3 starts before all of these are met):</p>
+<ul>
+<li><span class="cb cb-o">○</span> Every owned camera passes pytapo <code>getBasicInfo</code> with the pinned SHA.</li>
+<li><span class="cb cb-o">○</span> At least one snapshot mechanism succeeds per camera.</li>
+<li><span class="cb cb-o">○</span> Captured ONVIF GetProfiles + GetSnapshotUri responses for ≥3 distinct models.</li>
+<li><span class="cb cb-o">○</span> Smoke-test script committed to the repo.</li>
+<li><span class="cb cb-o">○</span> §3.3.1 matrix updated with any deltas observed against §3.3 expected behavior.</li>
+</ul>
+<p>If a camera fails Phase 0, the question is "investigate and update the matrix" not "ship anyway and let it fail in production."</p>
+<h3 id="16-1-phase-1-mvp-2-3-weeks">16.1 Phase 1 — MVP (2-3 weeks)</h3>
+<p><strong>Deliverable:</strong> Discover, list, info, snapshot, stream, basic state control (privacy, LED, night-vision, motion enable/disable/status), and reboot for the v1 verified-model set.</p>
+<ul>
+<li>Project skeleton, <code>uv</code> packaging, entry point</li>
+<li>Config loader (TOML), <code>config show</code>, <code>config validate</code> (FR-54, FR-54a/b/c)</li>
+<li>pytapo wrapper layer with alias-to-device resolution</li>
+<li>onvif-zeep-async wrapper for WS-Discovery</li>
+<li>WSDiscovery wrapper for the multicast transport</li>
+<li>ffmpeg subprocess seam for snapshot-fallback (record verb deferred to Phase 3)</li>
+<li>Verbs: <code>discover</code>, <code>list</code> (with <code>--probe</code>), <code>info</code>, <code>snapshot</code> (three-mechanism fallback), <code>stream</code> (URL emission), <code>privacy</code>, <code>led</code>, <code>night-vision</code>, <code>motion enable</code>, <code>motion disable</code>, <code>motion status</code>, <code>reboot</code></li>
+<li>Cloud-account credential source: env var and file with versioned-format support (FR-CRED-1..3); default file is the shared <code>~/.config/kasa-cli/credentials</code> per FR-CRED-3.1 (read-only from tapo-cli)</li>
+<li>Per-device camera-account file resolution (FR-CRED-4..7)</li>
+<li>pytapo session caching to <code>~/.config/tapo-cli/.tokens/</code> (FR-CRED-9..12)</li>
+<li>Per-device session-cache locking (FR-CRED-13)</li>
+<li>Output: text (default), <code>--json</code>, structured-error contract (FR-49a, §11.2)</li>
+<li>Exit codes 0, 1, 2, 3, 4, 5, 6, 64, 130</li>
+<li>Discovery zero-result handling (FR-5a) and multi-NIC <code>--target-network</code> (FR-5, FR-5b)</li>
+<li>Unit tests with mock pytapo, mock ONVIF, mock ffmpeg subprocess</li>
+</ul>
+<h3 id="16-2-phase-2-ptz-presets-alarm-audio-osd-1-2-weeks">16.2 Phase 2 — PTZ, Presets, Alarm, Audio, OSD (1-2 weeks)</h3>
+<p><strong>Deliverable:</strong> Full camera control surface beyond Phase 1's state toggles.</p>
+<ul>
+<li>Verbs: <code>ptz</code> (pan/tilt/zoom/stop with <code>--step</code>), <code>preset</code> (list/goto/save/delete)</li>
+<li>Verbs: <code>alarm</code> (enable/disable/trigger/status)</li>
+<li>Verbs: <code>audio</code> (volume, mic mute/unmute, speaker mute/unmute, tts on supported models)</li>
+<li>Verb: <code>osd set</code> with text/position/show-time</li>
+<li>Verb: <code>set --image-flip</code> and <code>set --timezone</code></li>
+<li><code>auth status</code>, <code>auth flush</code> sub-verbs (FR-CRED-12, FR-CRED-14)</li>
+<li>Optional file logging via <code>[logging] file</code> (§7.3)</li>
+<li>Exit code 5 paths exercised (PTZ on non-PTZ, tts on no-speaker, etc.)</li>
+</ul>
+<h3 id="16-3-phase-3-recording-motion-history-groups-batch-sigterm-2">16.3 Phase 3 — Recording, Motion History, Groups, Batch, SIGTERM (2 weeks)</h3>
+<p><strong>Deliverable:</strong> ffmpeg-subprocess recording, motion history retrieval, group/batch fan-out.</p>
+<ul>
+<li>Verb: <code>record</code> (FR-13..13g) with mandatory <code>--duration</code>/<code>--max-bytes</code> cap in non-tty mode and SIGINT/SIGTERM forwarding to ffmpeg</li>
+<li>Verb: <code>motion history --since --limit</code> (FR-25, FR-25a)</li>
+<li><code>groups list</code> sub-verb (mutations remain manual TOML edits — FR-43b)</li>
+<li><code>@group</code> and <code>--group</code> target syntax resolution</li>
+<li>Parallel execution with concurrency cap (FR-42) + per-command <code>--concurrency</code></li>
+<li><code>batch</code> verb reading from <code>--file</code> and <code>--stdin</code>; comments and blank lines (FR-45b)</li>
+<li><code>--jsonl</code> output format finalized; mixed-result JSON-validity contract (FR-49a)</li>
+<li>Exit code 7 for mixed-result batch/group failures (FR-43a, FR-45a)</li>
+<li>SIGINT/SIGTERM handling with <code>{"event":"interrupted",...}</code> summary line (FR-45c)</li>
+<li><code>stream</code>/<code>record</code> group-target rejection (FR-43c) verified</li>
+<li>Per-device-result reporting in JSON</li>
+</ul>
+<h3 id="16-4-phase-4-reserved-no-commitment">16.4 Phase 4 — (Reserved, no commitment)</h3>
+<p>There is <strong>no Phase 4 deliverable</strong> in this SRD. Candidates for a future SRD if the need arises: long-running ONVIF event subscription, motion-clip download, HLS transcoding shim, doorbell battery-mode workaround (if TP-Link ever opens it), HDR/noise-cancelling/auto-track set-flags. None are committed.</p>
+<p>---</p>
+<h2 id="17-revision-history">17. Revision History</h2>
+<h3 id="v1-1-1-2026-04-28-cloud-credentials-shared-with-kasa-cli">v1.1.1 — 2026-04-28 — Cloud credentials shared with kasa-cli</h3>
+<p>Operator request: tapo-cli SHALL reuse the existing kasa-cli cloud-account credentials by default rather than requiring a duplicate <code>~/.config/tapo-cli/credentials</code> file. TP-Link cloud accounts are user-scoped, not device-family-scoped — same email and password authenticate both Kasa plug/bulb control planes and Tapo camera control planes.</p>
+<ul>
+<li><strong>§6.2 step 3.</strong> Default cloud-account credentials file path changed from <code>~/.config/tapo-cli/credentials</code> to <code>~/.config/kasa-cli/credentials</code>. Format unchanged (JSON v1: <code>{"version":1,"username":"...","password":"..."}</code>).</li>
+<li><strong>§6.3 + new FR-CRED-3.1.</strong> Codifies the shared-file model: tapo-cli reads but NEVER writes the kasa-cli credentials file; a tapo-only override at <code>~/.config/tapo-cli/credentials</code> is honored when present and takes precedence; chmod 0600 enforcement (FR-CRED-2) still applies; <code>auth migrate</code> (FR-CRED-15a) only ever rewrites the tapo-only file, never the shared file.</li>
+<li><strong>§9.2 / §9.3 (config schema).</strong> Default <code>[credentials] file_path</code> updated; example block annotated to explain the shared-file rationale.</li>
+<li><strong>§15 row 6 (Resolved Decisions).</strong> Credential model row updated to name the shared-file default and the override path.</li>
+<li><strong>§16.1 (Phase 1 acceptance).</strong> Cross-references FR-CRED-3.1 alongside FR-CRED-1..3.</li>
+</ul>
+<p>No FR renumbering. New atomic clause: FR-CRED-3.1.</p>
+<p>---</p>
+<h3 id="v1-1-0-2026-04-28-reviewer-feedback-applied">v1.1.0 — 2026-04-28 — Reviewer feedback applied</h3>
+<p>Three independent reviews (Architect, Engineer, Researcher) hit v1.0.0. The findings are catalogued by ID; each bullet names the section(s) touched.</p>
+<p><strong>BLOCKING fixes (B-series):</strong></p>
+<ul>
+<li><strong>B1 — §3.4 + §5.1.</strong> Subnet TCP/443 probe-scan promoted to <strong>co-equal primary</strong> alongside WS-Discovery. Both run in parallel by default; dedupe by MAC then IP. New flags: <code>--no-scan</code> / <code>--ws-discovery-only</code> / <code>--scan-only</code>. Multicast-drop documented as the dominant failure mode on consumer mesh / client-isolation networks.</li>
+<li><strong>B2 — §6.1 + §6.2 + FR-CRED-8/8.1.</strong> Credential ordering inverted. <strong>Camera account is now the PRIMARY</strong> control-plane credential; cloud-account is a fallback for legacy firmware only. Cloud-fallback emits a deprecation warning per device per invocation.</li>
+<li><strong>B3 — §16.0.</strong> New <strong>Phase 0: Hardware Smoke-Test Gate</strong> (3 days). Pin pytapo SHA, smoke-test against every owned camera, capture protocol fixtures. Phases 1-3 do not start until Phase 0 passes.</li>
+<li><strong>B4 — FR-5/5b.</strong> <code>--target-network &lt;CIDR&gt;</code> with no matching local interface SHALL exit code <strong>6</strong> (config error) naming available interfaces.</li>
+<li><strong>B5 — FR-11..11d.</strong> Snapshot fallback chain made deterministic: tier-advance condition explicit (timeout / non-200 / non-JPEG / non-auth-exception); auth-rejection at any tier short-circuits to exit 2 immediately; <code>--timeout</code> is a TOTAL wall-clock budget with default 40/30/30 split overridable via <code>--snapshot-budget</code>; tier-3 ffmpeg-missing → exit 6 (config), not 1 (device).</li>
+<li><strong>B6 — FR-12..12g.</strong> Stream verb hardcoded <code>/stream1..7</code> paths replaced with <strong>ONVIF <code>GetProfiles</code>-driven resolver</strong>. New flags: <code>--profile &lt;name&gt;</code>, <code>--list-profiles</code>. Default lens × quality 2×2 truth table documented as the fallback when ONVIF is unavailable. Legacy <code>--protocol stream2</code> deprecated for one release.</li>
+<li><strong>B7 — FR-14..17c.</strong> PTZ unit semantics specified: <code>--step</code> is interpreted as <strong>degrees</strong> on <code>ptz-mode: continuous</code> models, <strong>device-step-units</strong> on <code>ptz-mode: step</code> models. Zoom <code>--step</code> is always device-step-units. Steps passed to pytapo as integers. JSON output includes <code>step_unit</code>.</li>
+<li><strong>B8 — FR-25..25d.</strong> Motion history determinism: <code>ts</code> is RFC 3339 UTC <code>Z</code>; <code>--since</code> accepts any RFC 3339 (assumes UTC if no offset, accepts bare dates); results sorted ascending by <code>ts</code>; future <code>--since</code> exits 0 with empty array.</li>
+<li><strong>B9 — FR-43a.</strong> Group/batch all-failure exit code is now the failure code of the sub-op whose target is <strong>first in the resolved alias list</strong> (alias-config-file ordering), not first to fail by completion order. Deterministic.</li>
+<li><strong>B10 — FR-44a.</strong> Batch JSONL per-line shape specified: <code>{command, target, status, exit_code, result?, error?}</code>. <code>result</code> is the verb's normal <code>--json</code> payload on success; <code>error</code> matches §11.2 minus the <code>exit_code</code> wrapping.</li>
+<li><strong>B11 — §7.2.</strong> Determinism mandate: all timestamps RFC 3339 UTC <code>Z</code>; multi-record output sorted by target ascending in config order with secondary timestamp tiebreak; numeric fields are JSON numbers, never strings.</li>
+<li><strong>B12 — §6.7 + §8.3.</strong> <code>--credential-source &lt;env|file|none&gt;</code> flag added with explicit precedence-override semantics, documented in both the auth chapter and the common-flags table.</li>
+</ul>
+<p><strong>SHOULD-FIX (S-series):</strong></p>
+<ul>
+<li><strong>S1 — §6.8 + FR-CRED-9.</strong> pytapo auth variants (legacy POST cookie / KLAP / SSE) acknowledged as informative. Cache schema is an opaque pytapo state blob with a <code>pytapo_version</code> field for invalidation on library upgrade.</li>
+<li><strong>S2 — FR-12f / FR-12g.</strong> Credential-leak hardening: <code>--credentials-via-env</code> redacts URL on stdout and exports <code>RTSP_USER</code>/<code>RTSP_PASS</code>. New <code>--exec</code> shorthand passes RTSP URL via env to a child process via <code>execvp</code>.</li>
+<li><strong>S3 — FR-13/13a/13d.1/13g.</strong> <code>--with-recording</code> mandate <strong>dropped</strong>. Footgun guard: <code>record</code> in non-tty mode requires <code>--duration</code> OR <code>--max-bytes</code>; tty mode prompts for confirmation. New <code>--max-bytes</code>. Perf targets: start-to-first-frame &lt; 3000 ms p95; SIGINT-finalize &lt; 2000 ms typical (5s upper).</li>
+<li><strong>S4 — §3.3.1.</strong> Per-feature × per-model capability matrix added — tts, osd, alarm-trigger, night-vision modes, audio-volume, dual-lens-stream, ptz-mode. Phase 2 verbs cite this matrix; exit code 5 mappings reference it explicitly.</li>
+<li><strong>S5 — §3.1.</strong> HA 2025.11 incident reworded as a <strong>pytapo 3.3.51 incompatibility incident</strong> (HA pinned to 3.3.51 and that exact pinned version became incompatible). Issue #1099 cited. Drops the misleading "&lt;3.3.51" framing.</li>
+<li><strong>S6 — §3.3.</strong> Disclaimer added clarifying the verified list is from HA-Tapo-Control README (2026-04-28) and is NOT TP-Link's current catalog. Added an "untested in v1" row enumerating current-catalog models (C402/C403/C460/C465/C560WS/C610/C615F/C645D/C660/C675D/TC53/TCW90). Legacy entries kept.</li>
+<li><strong>S7 — §4.6 + §5.4.</strong> ONVIF "varies by firmware" claim rephrased to factual rationale ("pytapo coverage of stills is the most-divergent surface") rather than uncited generalization. Specific URLs intentionally not embedded because they move.</li>
+<li><strong>S8 — §10.5 + FR-CRED-14.</strong> SessionMetadata reconciled with <code>auth status</code> example. Added <code>expires_at</code> (RFC 3339 string or null), <code>cache_path</code> field, and <code>pytapo_version</code> per FR-CRED-9.</li>
+<li><strong>S9 — FR-CRED-13.</strong> Per-device flock acquisition timeout = <code>--timeout</code> seconds (default 5); timeout exits code <strong>3</strong> (network/contention) with PID of holder if obtainable from <code>/proc/locks</code> (Linux) or <code>lsof</code> (macOS).</li>
+<li><strong>S10 — §11.1 disambiguation block.</strong> Missing-credentials → exit 2 (auth); credentials-file chmod violation → exit 2; snapshot tier-3 ffmpeg-missing → exit 6 (config); <code>--target-network</code> with no matching interface → exit 6.</li>
+<li><strong>S11 — §6.2 partial env fall-through note.</strong> If exactly one of <code>TAPO_USERNAME</code>/<code>TAPO_PASSWORD</code> is set, env-var source is treated as not-set and resolver falls through. <code>-v</code> mode logs the partial-set as WARN.</li>
+<li><strong>S12 — FR-46.</strong> <code>auto</code> output mode emits JSONL whenever stdout is not a tty, <strong>including file redirects</strong> — not only pipes.</li>
+<li><strong>S13 — FR-38.</strong> <code>--quiet</code> implies <code>--yes</code> for <code>reboot</code>. tty-mode prompt rendered to stderr.</li>
+<li><strong>S14 — FR-37/37a/37b.</strong> OSD <code>--text</code> length measured in Unicode codepoints (32 limit). Device-side rejection of unsupported codepoints → exit 1 (device error), distinct from exit 64 (CLI usage error for &gt;32 codepoints).</li>
+<li><strong>S15 — FR-11d.</strong> <code>snapshot --output -</code> incompatible with <code>--json</code>/<code>--jsonl</code> (exit 64). <code>--quiet</code> IS permitted with <code>--output -</code> because the JPEG bytes ARE the stdout payload.</li>
+<li><strong>S16 — kasa-cli parity gaps.</strong> New <code>auth migrate</code> sub-verb (FR-55). New <code>--online-only</code> flag for <code>list</code> (FR-8 + §8.3 table). FR-54d adds <code>config show</code> redaction (<code>***</code> for both cloud-account and camera-account passwords). §12.1 mock-device fixtures expanded: TC85 outdoor, C100 indoor non-PTZ, C225 telephoto path (was wide-only), parity with kasa's per-family mocks.</li>
+</ul>
+<h3 id="deferred-to-backlog-intentional-with-rationale">Deferred to backlog (intentional, with rationale)</h3>
+<ul>
+<li><strong>Architect #10 — ONVIF event subscription.</strong> Defer to Phase 4 candidate.</li>
+<li><strong>Architect #11 — motion-clip download experimental.</strong> Kept in §14 Out-of-Scope; rephrased to "low priority not impossible" rather than "possibly never." A future SRD may revisit if the underlying protocol stabilizes.</li>
+<li><strong>Architect #14 — drop flock for atomic-rename only.</strong> Kept as-is; flock is cheap insurance against rare same-machine concurrent invocations and the atomic-rename alone would be a regression in observability.</li>
+<li><strong>Architect #15 — camera-account creation verb.</strong> Kept in §14 Out-of-Scope; rephrased to "deferred — protocol exists, low priority." Rare-enough operation that the manual Tapo-app step is acceptable for v1.</li>
+<li><strong>Engineer #19 — chmod on weird filesystems (NFS, FAT).</strong> Deferred. Will surface as bug reports if it matters.</li>
+<li><strong>Engineer #25 — full SHA-pin syntax block.</strong> Single one-line example added in §13.3; full pyproject <code>[tool.uv.sources]</code> block deferred until Phase 0 closes and the SHA is known.</li>
+</ul>
+<h3 id="v1-0-0-2026-04-28-initial-draft">v1.0.0 — 2026-04-28 — Initial draft</h3>
+<p>Initial draft. 16 sections, 60+ FRs, kasa-cli structural parity. See git history for content baseline.</p>
+<p>---</p>
+<p><strong>End of document.</strong></p>
+</main>
+</body>
+</html>
