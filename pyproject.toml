@@ -1,6 +1,6 @@
 [project]
 name = "tapo-cli"
-version = "0.0.1"
+version = "0.0.2"
 description = "Deterministic local-LAN CLI for TP-Link Tapo cameras and doorbells"
 readme = "README.md"
 license = { text = "MIT" }
@@ -22,9 +22,15 @@ classifiers = [
   "Topic :: System :: Networking",
 ]
 dependencies = [
-  # pytapo SHA-pin to be set in Phase 0 after hardware smoke-test (per SRD §16.0)
-  # onvif-zeep-async + WSDiscovery to be added in Phase 1
+  # pytapo pinned to a specific main-branch SHA per SRD §16.0 (Phase 0).
+  # SHA verified 2026-04-28 via: gh api repos/JurajNyiri/pytapo/commits/main
+  # Commit: "Merge pull request #163 from ramast/main — Added support for logo
+  # parameter in setOsd and getOsd" (authored 2026-04-14).
+  "pytapo @ git+https://github.com/JurajNyiri/pytapo@de5ca3787c710151185bc72a35945d4091727c1e",
+  "onvif-zeep-async>=4.0.4,<5",
+  "WSDiscovery>=2.1.2,<3",
   "click>=8.1",
+  "httpx>=0.27",
 ]
 
 [project.scripts]
@@ -46,6 +52,10 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+# pytapo is pinned by git SHA per SRD §16.0. Direct references require this opt-in.
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tapo_cli"]
