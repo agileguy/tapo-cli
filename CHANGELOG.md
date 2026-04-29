@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-04-29
+
+Phase 1c — `snapshot` and `stream` verbs land on top of the Phase 1a/1b foundation.
+
+### Added
+
+- `tapo-cli snapshot <target> --output <path>` (FR-11..11d, B5) — three-mechanism fallback chain: pytapo native → ONVIF `GetSnapshotUri` → ffmpeg single-frame from RTSP. Tier-advance condition (FR-11a.1) honored: per-tier budget timeout, non-200 / non-JPEG (`FF D8 FF` magic-byte sniff), and any non-auth exception each advance to the next tier. Auth-rejection (HTTP 401, pytapo `_AUTH_FAILED`, RTSP 401) at any tier short-circuits the chain to exit 2 immediately (FR-11a.2). Total `--timeout` is split 40% pytapo / 30% ONVIF / 30% ffmpeg by default; override via `--snapshot-budget pytapo=N,onvif=N,ffmpeg=N`. Sum-exceeds-`--timeout` exits 64 (FR-11a.3). Tier-3 ffmpeg-missing-on-PATH exits 6 (config error, FR-11a.4) — not 1 (device error). `--output -` writes JPEG bytes on stdout, incompatible with `--json` / `--jsonl` (exit 64, FR-11d). `--quiet` is permitted with `--output -` (S15 carve-out — JPEG bytes ARE the stdout payload). JSON output reports `mechanism`, `bytes`, `width`, `height`, `elapsed_ms`, `target` per FR-11b.
+- `tapo-cli stream <target>` (FR-12..12g, B6, S2) — emits an `rtsp://user:pass@ip:554/streamN` URL on stdout (Unix philosophy; user pipes to ffmpeg). Stream-path resolution honors lens-by-quality truth table per B6 (`(wide,hd)→stream1`, `(wide,sd)→stream2`, `(telephoto,hd)→stream6`, `(telephoto,sd)→stream7`), overridable via `--protocol streamN` or `--profile <name>`. `--list-profiles` (FR-12b.2) emits the ONVIF `GetProfiles` response as a JSON array; ONVIF unavailable → exit 5. Camera-account-only path (FR-CRED-7): no `camera_account_file` for target → exit 2 with Tapo-app-menu hint. Group-target rejection (FR-49 / FR-43c) → exit 64.
+- Credential-leakage hardening for `stream` (FR-12f, FR-12g, S2): `--credentials-via-env` redacts the URL printed on stdout (`rtsp://<user>:<pass>@host:port/path`) and exports `RTSP_USER` / `RTSP_PASS` / `RTSP_URL` to an exec'd child. `--exec <argv...>` replaces this process via `execvp` and substitutes the URL into `{}` placeholders or appends as the last arg; combined with `--credentials-via-env` the child sees only the redacted URL on argv with full creds via env — credentials never appear in shell history or process-list snapshots.
+- Reusable media helpers in `src/tapo_cli/media.py`: `build_rtsp_url` (with `urllib.parse.quote(safe='')` percent-encoding for special-char passwords), `mask_url_credentials` (logs/stderr), `redact_userinfo` (`<user>:<pass>` placeholders for hardened mode), `resolve_onvif_wsdl_dir` (the `site-packages/onvif/wsdl/` lookup that works around onvif-zeep-async 4.0.4's shallow `_WSDL_PATH` default — Phase 0 BUG 2 lifted out of `scripts/smoke.py`).
+- Pure-Python JPEG-dimension parser in `snapshot_cmd._jpeg_dimensions` — walks SOFn markers and reads height/width without a Pillow dependency.
+- Test suite: 43 new tests (was 178 in Phase 1b → 221 in Phase 1c). New: `tests/test_snapshot_cmd.py` (23 tests covering budget parsing, JPEG validation, tier-advance, auth short-circuit, ffmpeg-missing → exit 6, --output - mutex, JSON schema, group rejection), `tests/test_stream_cmd.py` (20 tests covering URL construction, special-char password quoting, lens/quality matrix, ONVIF profile fetch, --list-profiles, --credentials-via-env redaction, --exec child substitution with and without creds-via-env, FR-CRED-7 missing-account, group rejection). Mock-only — no real network.
+- `cli.py` Click context now exposes `json_flag` / `jsonl_flag` / `quiet_flag` so verbs that need to distinguish "explicit `--json`/`--jsonl`" from "auto-JSONL on a pipe" can do so without re-parsing argv. The stream verb requires this distinction because its FR-12 contract is a bare `rtsp://...` line on stdout regardless of tty state.
+
+### Changed
+
+- Bumped version `0.1.1` → `0.1.2` in both `pyproject.toml` and `src/tapo_cli/__init__.py`.
+- `tests/test_cli.py` — `test_top_level_help_lists_phase_1b_verbs` renamed to `test_top_level_help_lists_phase_1c_verbs`. `snapshot` and `stream` moved from the embargoed list to the required list. `record`, `ptz`, `preset`, `motion`, `alarm`, `led`, `privacy`, `night-vision`, `audio`, `osd`, `reboot`, `batch` remain embargoed (Phase 1d / Phase 2+).
+
 ## [0.1.0] — 2026-04-28
 
 Phase 1a (Foundation) — first release with executable CLI surface. No camera verbs yet; those land in Phase 1b/1c/1d.

@@ -31,6 +31,8 @@ from tapo_cli.verbs.config_cmd import config_group
 from tapo_cli.verbs.discover_cmd import discover_cmd
 from tapo_cli.verbs.info_cmd import info_cmd
 from tapo_cli.verbs.list_cmd import list_cmd
+from tapo_cli.verbs.snapshot_cmd import snapshot_cmd
+from tapo_cli.verbs.stream_cmd import stream_cmd
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -144,6 +146,14 @@ def main(
         "credential_source": credential_source,
         "verbose": verbose,
         "concurrency": global_concurrency,
+        # The stream verb (FR-12) needs to distinguish "explicit --json/--jsonl"
+        # from "auto-JSONL on a pipe" because its default contract is a bare
+        # ``rtsp://...`` line on stdout regardless of tty state. Preserve the
+        # raw flags so a verb that wants this distinction can ask for it
+        # without re-parsing argv.
+        "json_flag": json_flag,
+        "jsonl_flag": jsonl_flag,
+        "quiet_flag": quiet,
     }
 
 
@@ -152,6 +162,8 @@ main.add_command(config_group)
 main.add_command(discover_cmd)
 main.add_command(list_cmd)
 main.add_command(info_cmd)
+main.add_command(snapshot_cmd)
+main.add_command(stream_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that
