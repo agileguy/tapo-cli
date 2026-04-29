@@ -64,6 +64,10 @@ def test_top_level_help_lists_phase_1cd_verbs() -> None:
     assert " set " in out, (
         "Phase 4a CLI must list the new 'set' verb in --help (FR-39c)"
     )
+    # Phase 4b: events verb (FR-57..62) MUST be exposed.
+    assert "events" in out, (
+        "Phase 4b CLI must list the new 'events' verb in --help (FR-57..62)"
+    )
 
 
 def test_version_emits_package_version() -> None:
@@ -71,7 +75,7 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.3.1"
+    assert PACKAGE_VERSION == "0.4.0"
 
 
 def test_set_help_lists_image_flip_and_timezone() -> None:

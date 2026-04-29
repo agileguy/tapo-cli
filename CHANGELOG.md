@@ -6,6 +6,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-29
+
+Phase 4b per SRD §16.4.2 — push-event subscription via ONVIF Profile-S `PullPointSubscription` (FR-57..62, §10.6 `Event` data model).
+
+### Added
+
+- `tapo-cli events <target> [--follow]` (FR-57..62, §10.6) — subscribes to a camera's ONVIF Profile-S `PullPointSubscription` endpoint via `onvif-zeep-async 4.0.4`, pulls pending events with `PullMessages`, projects each NotificationMessage into a §10.6 `Event` record, and emits JSONL to stdout. Two modes:
+  - **One-shot** (`tapo-cli events <target>`): pull once with `Timeout=PT5S` `MessageLimit=100` (FR-57), emit any returned events, `Unsubscribe` cleanly, exit 0. Honors `--limit N` to cap emissions.
+  - **Follow** (`tapo-cli events <target> --follow`): loops on PullMessages with `Timeout=PT30S` `MessageLimit=100` (FR-58) until SIGINT/SIGTERM; on signal it `Unsubscribes` within a 2-second hard budget, emits a final `{"event":"interrupted","subscription_age_s":...}` summary line, and exits 130/143.
+- `--types <list>` (FR-59) — comma-separated event-type filter (`motion,person,vehicle,doorbell-press,unknown`); events outside the filter are dropped silently. Default is no filter.
+- `--reconnect-after <seconds>` (FR-60) — recreate the subscription after N seconds of liveness; useful for cameras with broker-side TTL on PullPoint subscriptions.
+- Auto-reconnect on transport error (FR-61): capped exponential backoff `1s → 2s → 4s → 8s → 16s → 32s → 32s`; 5 consecutive failures exits 3 (network), a successful pull resets the counter.
+- ONVIF Topic projection (FR-62): `tns1:RuleEngine/CellMotionDetector/Motion` and `tns1:VideoSource/MotionAlarm` → `motion`; `tns1:RuleEngine/MyRuleDetector/HumanDetect` and `.../PeopleDetect` → `person`; `tns1:Device/Trigger/DigitalInput` → `doorbell-press`; tamper events → `unknown` (the SRD §10.6 enum has no `tamper` token).
+- §10.6 `Event` dataclass — `{ts, target, event_type, has_clip, region?, source: "onvif"}`. Identical in shape to the §10.3 `MotionEvent` modulo the constant `source` field, so operators MAY merge `motion history` and `events --follow` JSONL streams and dedupe on `(target, ts, event_type)`.
+- Group-target rejection (exit 64) — `events` is per-device by design; one subscription per stdout. FR-43c-style carve-out matching `stream` and `record`.
+- Test suite: 28 new tests in `tests/test_events_cmd.py` cover topic projection, one-shot mode, `--limit`, `--types` filtering, `--follow` with SIGINT, transport-error backoff (single failure recovery, 5-failure exit-3, streak reset), `--reconnect-after`, auth-fail, and unsupported-feature exit-5. 10 new tests in `tests/test_event_dataclass.py` pin the §10.6 schema.
+
+### Changed
+
+- Bumped version `0.3.1` → `0.4.0` in both `pyproject.toml` and `src/tapo_cli/__init__.py`. Phase 4b is a minor (new always-on long-running verb).
+- `cli.py` registers the new `events` verb. Top-level `--help` now lists it.
+
+### Notes
+
+- onvif-zeep-async exposes `ONVIFCamera.create_pullpoint_manager()` as a higher-level helper that auto-renews on a timer, but Phase 4b drives `events_service.CreatePullPointSubscription` → `pullpoint_service.PullMessages` → `subscription.Unsubscribe` directly. The lower-level path makes the FR-58/60/61 budgets deterministic and the test mocks straightforward — the manager helper's renewal timer would conflict with the explicit `--reconnect-after` lifecycle.
+- `has_clip` is currently always `False` on emitted events. The SD-card ±5s heuristic (FR-62) will land in Phase 4c when `motion download-clip` integrates with `pytapo.getRecordings()`. The dataclass field is in place so the contract is stable.
+
 ## [0.3.1] — 2026-04-29
 
 Phase 4a per SRD §16.4.1 — fan-out generalization (FR-43d, FR-56/56a/56b), `set` verb retro-fix (FR-39c, slipped from Phase 2), and group-level `reboot` confirmation (FR-43e/f).
