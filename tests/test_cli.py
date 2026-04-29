@@ -27,7 +27,7 @@ def _redirect_cache(monkeypatch, tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_top_level_help_lists_phase_1c_verbs() -> None:
+def test_top_level_help_lists_phase_1cd_verbs() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0, result.output
@@ -40,28 +40,28 @@ def test_top_level_help_lists_phase_1c_verbs() -> None:
         assert required in out, (
             f"Phase 1b CLI must list verb {required!r} in --help"
         )
-    # Phase 1c: snapshot + stream MUST now be exposed.
+    # Phase 1c: snapshot + stream MUST be exposed.
     for required in ("snapshot", "stream"):
         assert required in out, (
             f"Phase 1c CLI must list verb {required!r} in --help"
         )
-    # Phase 1d / Phase 2+ camera verbs are still embargoed.
+    # Phase 1d: state-control verbs MUST be exposed.
+    for required in ("privacy", "led", "night-vision", "motion", "reboot"):
+        assert required in out, (
+            f"Phase 1d CLI must list verb {required!r} in --help"
+        )
+    # Phase 2+ camera verbs are still embargoed (record arrives in Phase 3).
     for forbidden in (
         "record",
         "ptz",
         "preset",
-        "motion",
         "alarm",
-        "led",
-        "privacy",
-        "night-vision",
         "audio",
         "osd",
-        "reboot",
         "batch",
     ):
         assert forbidden not in out, (
-            f"Phase 1d/2 verb {forbidden!r} must not appear yet"
+            f"Phase 2+ verb {forbidden!r} must not appear yet"
         )
 
 
@@ -70,7 +70,7 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.1.2"
+    assert PACKAGE_VERSION == "0.1.3"
 
 
 def test_auth_help_lists_three_actions() -> None:
