@@ -26,6 +26,8 @@ import tapo_cli as _pkg
 from tapo_cli.errors import EXIT_USAGE_ERROR
 from tapo_cli.output import detect_mode
 from tapo_cli.runner import run_async as _run_async
+from tapo_cli.verbs.alarm_cmd import alarm_cmd
+from tapo_cli.verbs.audio_cmd import audio_cmd
 from tapo_cli.verbs.auth_cmd import auth_group
 from tapo_cli.verbs.config_cmd import config_group
 from tapo_cli.verbs.discover_cmd import discover_cmd
@@ -34,7 +36,10 @@ from tapo_cli.verbs.led_cmd import led_cmd
 from tapo_cli.verbs.list_cmd import list_cmd
 from tapo_cli.verbs.motion_cmd import motion_cmd
 from tapo_cli.verbs.night_vision_cmd import night_vision_cmd
+from tapo_cli.verbs.osd_cmd import osd_cmd
+from tapo_cli.verbs.preset_cmd import preset_cmd
 from tapo_cli.verbs.privacy_cmd import privacy_cmd
+from tapo_cli.verbs.ptz_cmd import ptz_cmd
 from tapo_cli.verbs.reboot_cmd import reboot_cmd
 from tapo_cli.verbs.snapshot_cmd import snapshot_cmd
 from tapo_cli.verbs.stream_cmd import stream_cmd
@@ -174,6 +179,12 @@ main.add_command(led_cmd)
 main.add_command(night_vision_cmd)
 main.add_command(motion_cmd)
 main.add_command(reboot_cmd)
+# Phase 2 verbs (FR-14..17, FR-18..21, FR-22..24, FR-33..36, FR-37).
+main.add_command(ptz_cmd)
+main.add_command(preset_cmd)
+main.add_command(alarm_cmd)
+main.add_command(audio_cmd)
+main.add_command(osd_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that
