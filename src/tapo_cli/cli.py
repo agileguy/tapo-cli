@@ -32,6 +32,7 @@ from tapo_cli.verbs.auth_cmd import auth_group
 from tapo_cli.verbs.batch_cmd import batch_cmd
 from tapo_cli.verbs.config_cmd import config_group
 from tapo_cli.verbs.discover_cmd import discover_cmd
+from tapo_cli.verbs.events_cmd import events_cmd
 from tapo_cli.verbs.groups_cmd import groups_cmd
 from tapo_cli.verbs.info_cmd import info_cmd
 from tapo_cli.verbs.led_cmd import led_cmd
@@ -195,6 +196,8 @@ main.add_command(groups_cmd)
 main.add_command(batch_cmd)
 # Phase 4a verb (FR-39 / FR-39a, retro-fixed per FR-39c — slipped from Phase 2).
 main.add_command(set_cmd)
+# Phase 4b verb (FR-57..62, §10.6) — push events via ONVIF PullPointSubscription.
+main.add_command(events_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that
