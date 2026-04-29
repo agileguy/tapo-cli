@@ -167,6 +167,7 @@ def _dispatch(
     timeout = float(parent_state.get("timeout") or 5.0)
     config_path = parent_state.get("config_path")
     credential_source = parent_state.get("credential_source")
+    concurrency = parent_state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -179,6 +180,7 @@ def _dispatch(
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -196,8 +198,11 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
-    # Up-front usage-shape check BEFORE we open a network connection.
+    # Up-front usage-shape check BEFORE we open a network connection or fan
+    # out. A malformed flag affects every member equally, so this is one
+    # exit-64 per invocation, not per camera.
     if action == "set" and text is None and show_time is None:
         raise UsageError(
             "osd set requires at least one of --text or --show-time/--hide-time",
@@ -208,9 +213,93 @@ async def _run(
             ),
         )
 
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_osd(
+                alias=alias,
+                action=action,
+                text=text,
+                position=position,
+                show_time=show_time,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+                emit_to_stdout=False,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    return await _execute_osd_emit(
+        alias=target,
+        action=action,
+        text=text,
+        position=position,
+        show_time=show_time,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+        mode=mode,
+    )
+
+
+async def _execute_osd_emit(
+    *,
+    alias: str,
+    action: str,
+    text: str | None,
+    position: str,
+    show_time: bool | None,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+    mode: OutputMode,
+) -> int:
+    """Single-target ``osd`` path: produce + emit the record."""
+    record = await _execute_osd(
+        alias=alias,
+        action=action,
+        text=text,
+        position=position,
+        show_time=show_time,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+        emit_to_stdout=False,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_osd(
+    *,
+    alias: str,
+    action: str,
+    text: str | None,
+    position: str,
+    show_time: bool | None,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+    emit_to_stdout: bool,  # kept for symmetry; current callers always pass False
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -222,53 +311,51 @@ async def _run(
     config_model = config_entry.model if config_entry is not None else None
     model = await resolve_model_for_target(conn.tapo, config_model=config_model)
 
-    alias = conn.target.alias
+    canonical_alias = conn.target.alias
 
     if action == "status":
-        # Status only needs ``osd_timestamp`` — every model supports it,
-        # but the gate is here for future-proofing.
         require_feature(
-            model=model, target=alias, feature="osd_timestamp", verb_name="osd status"
+            model=model,
+            target=canonical_alias,
+            feature="osd_timestamp",
+            verb_name="osd status",
         )
-        return await _emit_status(conn.tapo, alias, mode)
+        return await _build_status_record(conn.tapo, canonical_alias)
 
     if action == "clear":
-        # Clearing a label requires the model to support custom labels in
-        # the first place. Otherwise there is nothing to clear.
         require_feature(
-            model=model, target=alias, feature="osd_text", verb_name="osd clear"
+            model=model,
+            target=canonical_alias,
+            feature="osd_text",
+            verb_name="osd clear",
         )
         await asyncio.to_thread(_apply_osd, conn.tapo, label="", label_enabled=False)
-        clear_record: dict[str, object] = {"target": alias, "action": "clear"}
-        emit(clear_record, mode, formatter=_to_text)
-        return EXIT_SUCCESS
+        return {"target": canonical_alias, "action": "clear"}
 
     # action == "set"
     if text is not None:
-        # Capability gate FIRST — fail fast on unsupported models even for
-        # a 1-character payload.
         require_feature(
-            model=model, target=alias, feature="osd_text", verb_name="osd set"
+            model=model,
+            target=canonical_alias,
+            feature="osd_text",
+            verb_name="osd set",
         )
         # Codepoint length check (FR-37a, S14). len(str) on Python 3 IS the
-        # codepoint count for unicode strings, NOT the byte count. A four-
-        # byte CJK glyph counts as one codepoint; a single emoji counts as
-        # one too (or sometimes two — surrogate pair / ZWJ — len() reflects
-        # exactly what the SRD calls codepoints).
+        # codepoint count for unicode strings, NOT the byte count.
         if len(text) > _MAX_LABEL_CODEPOINTS:
             raise UsageError(
                 f"osd --text exceeds {_MAX_LABEL_CODEPOINTS} codepoints "
                 f"(got {len(text)})",
-                target=alias,
+                target=canonical_alias,
                 hint=f"Truncate the label to ≤{_MAX_LABEL_CODEPOINTS} codepoints.",
             )
 
     if show_time is not None:
-        # Toggling the timestamp uses the lighter ``osd_timestamp`` gate
-        # — no model in the matrix lacks it, but the capability check
-        # is here for parity.
         require_feature(
-            model=model, target=alias, feature="osd_timestamp", verb_name="osd set"
+            model=model,
+            target=canonical_alias,
+            feature="osd_timestamp",
+            verb_name="osd set",
         )
 
     label_x, label_y = _POSITION_COORDS[position]
@@ -283,7 +370,7 @@ async def _run(
     )
 
     set_record: dict[str, object] = {
-        "target": alias,
+        "target": canonical_alias,
         "action": "set",
     }
     if text is not None:
@@ -291,12 +378,10 @@ async def _run(
         set_record["position"] = position
     if show_time is not None:
         set_record["show_time"] = show_time
-
-    emit(set_record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return set_record
 
 
-async def _emit_status(tapo: Any, alias: str, mode: OutputMode) -> int:
+async def _build_status_record(tapo: Any, alias: str) -> dict[str, object]:
     raw: object = await asyncio.to_thread(tapo.getOsd)
     record: dict[str, object] = {
         "target": alias,
@@ -311,9 +396,7 @@ async def _emit_status(tapo: Any, alias: str, mode: OutputMode) -> int:
         label = raw.get("label")
         if isinstance(label, str):
             record["label"] = label
-
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return record
 
 
 def _apply_osd(
