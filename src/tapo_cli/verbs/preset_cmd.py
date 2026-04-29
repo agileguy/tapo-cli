@@ -110,6 +110,7 @@ def _dispatch(ctx: click.Context, *, action: str, name: str | None) -> None:
     timeout = float(parent_state.get("timeout") or 5.0)
     config_path = parent_state.get("config_path")
     credential_source = parent_state.get("credential_source")
+    concurrency = parent_state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -120,6 +121,7 @@ def _dispatch(ctx: click.Context, *, action: str, name: str | None) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -135,10 +137,61 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_preset(
+                alias=alias,
+                action=action,
+                name=name,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    return await _execute_preset_emit(
+        alias=target,
+        action=action,
+        name=name,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+        mode=mode,
+    )
+
+
+async def _execute_preset_emit(
+    *,
+    alias: str,
+    action: str,
+    name: str | None,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+    mode: OutputMode,
+) -> int:
+    """Single-target path that streams the ``list`` shape via ``emit_stream``."""
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -157,28 +210,89 @@ async def _run(
         verb_name="preset",
     )
 
-    alias = conn.target.alias
+    canonical_alias = conn.target.alias
     if action == "list":
         presets = await asyncio.to_thread(_load_presets, conn.tapo)
         records = [{"id": p[0], "name": p[1]} for p in presets]
         emit_stream(records, mode, formatter=_list_formatter)
         return EXIT_SUCCESS
 
-    assert name is not None  # click guarantees this for goto/save/delete
+    record = await _execute_preset_action(
+        tapo=conn.tapo, alias=canonical_alias, action=action, name=name
+    )
+    emit(record, mode, formatter=_one_formatter)
+    return EXIT_SUCCESS
+
+
+async def _execute_preset(
+    *,
+    alias: str,
+    action: str,
+    name: str | None,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
+    """Per-target preset execution for fan-out. Returns the JSON record.
+
+    For ``action == "list"`` returns ``{"target", "action": "list", "presets": [...]}``
+    so the B10 fan-out envelope can wrap it cleanly (single-target ``list``
+    keeps using ``emit_stream`` for back-compat).
+    """
+    from tapo_cli import wrapper as wrap
+
+    cfg, resolved_target = load_config_with_target(alias, config_path)
+    conn = await wrap.connect(
+        cfg,
+        resolved_target,
+        credential_source=credential_source,  # type: ignore[arg-type]
+        timeout=timeout,
+    )
+
+    config_entry = cfg.devices.get(resolved_target)
+    config_model = config_entry.model if config_entry is not None else None
+    model = await resolve_model_for_target(conn.tapo, config_model=config_model)
+    require_feature(
+        model=model,
+        target=conn.target.alias,
+        feature="preset",
+        verb_name="preset",
+    )
+
+    canonical_alias = conn.target.alias
+    if action == "list":
+        presets = await asyncio.to_thread(_load_presets, conn.tapo)
+        return {
+            "target": canonical_alias,
+            "action": "list",
+            "presets": [{"id": p[0], "name": p[1]} for p in presets],
+        }
+
+    return await _execute_preset_action(
+        tapo=conn.tapo, alias=canonical_alias, action=action, name=name
+    )
+
+
+async def _execute_preset_action(
+    *,
+    tapo: Any,
+    alias: str,
+    action: str,
+    name: str | None,
+) -> dict[str, object]:
+    """Run goto / save / delete and return the JSON record."""
+    assert name is not None  # click guarantees this
 
     if action == "save":
-        new_id = await asyncio.to_thread(_save_preset, conn.tapo, name)
-        record = {
+        new_id = await asyncio.to_thread(_save_preset, tapo, name)
+        return {
             "target": alias,
             "action": "save",
             "preset_id": new_id,
             "name": name,
         }
-        emit(record, mode, formatter=_one_formatter)
-        return EXIT_SUCCESS
 
-    # goto + delete share the name → id resolution
-    presets = await asyncio.to_thread(_load_presets, conn.tapo)
+    presets = await asyncio.to_thread(_load_presets, tapo)
     preset_id = _resolve_preset_id(presets, name)
     if preset_id is None:
         raise NotFoundError(
@@ -191,18 +305,16 @@ async def _run(
         )
 
     if action == "goto":
-        await asyncio.to_thread(conn.tapo.setPreset, preset_id)
+        await asyncio.to_thread(tapo.setPreset, preset_id)
     else:  # delete
-        await asyncio.to_thread(conn.tapo.deletePreset, preset_id)
+        await asyncio.to_thread(tapo.deletePreset, preset_id)
 
-    record = {
+    return {
         "target": alias,
         "action": action,
         "preset_id": int(preset_id) if str(preset_id).isdigit() else preset_id,
         "name": name,
     }
-    emit(record, mode, formatter=_one_formatter)
-    return EXIT_SUCCESS
 
 
 # ---------------------------------------------------------------------------

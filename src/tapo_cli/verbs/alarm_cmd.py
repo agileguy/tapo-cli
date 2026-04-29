@@ -69,12 +69,18 @@ logger = logging.getLogger("tapo_cli")
 )
 @click.pass_context
 def alarm_cmd(ctx: click.Context, target: str, action: str) -> None:
-    """Enable / disable / trigger / status the camera's alarm/siren."""
+    """Enable / disable / trigger / status the camera's alarm/siren.
+
+    Group fan-out (FR-43d): ``@group`` targets fan out per-camera with
+    the standard B10 envelope. FR-43f mixed-feature behavior: members
+    lacking the requested feature emit a per-target exit-5 result.
+    """
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -84,6 +90,7 @@ def alarm_cmd(ctx: click.Context, target: str, action: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -98,10 +105,57 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_alarm(
+                alias=alias,
+                action=action,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_alarm(
+        alias=target,
+        action=action,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_alarm(
+    *,
+    alias: str,
+    action: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -119,27 +173,24 @@ async def _run(
         model=model, target=conn.target.alias, feature=feature, verb_name=f"alarm {action}"
     )
 
-    alias = conn.target.alias
+    canonical_alias = conn.target.alias
 
     if action == "enable":
         await asyncio.to_thread(_set_alarm, conn.tapo, True)
-        record = await _build_status_record(conn.tapo, alias, action="enable")
-    elif action == "disable":
+        return await _build_status_record(conn.tapo, canonical_alias, action="enable")
+    if action == "disable":
         await asyncio.to_thread(_set_alarm, conn.tapo, False)
-        record = await _build_status_record(conn.tapo, alias, action="disable")
-    elif action == "trigger":
+        return await _build_status_record(conn.tapo, canonical_alias, action="disable")
+    if action == "trigger":
         await asyncio.to_thread(conn.tapo.startManualAlarm)
-        record = {
-            "target": alias,
+        return {
+            "target": canonical_alias,
             "action": "trigger",
             "alarm_enabled": True,
             "manual": True,
         }
-    else:  # status
-        record = await _build_status_record(conn.tapo, alias, action="status")
-
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    # status
+    return await _build_status_record(conn.tapo, canonical_alias, action="status")
 
 
 def _set_alarm(tapo: Any, enabled: bool) -> None:

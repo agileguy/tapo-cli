@@ -37,7 +37,7 @@ from typing import Any
 
 import click
 
-from tapo_cli.config import load_config
+from tapo_cli.config import Config, load_config
 from tapo_cli.errors import (
     EXIT_SUCCESS,
     EXIT_USAGE_ERROR,
@@ -553,6 +553,7 @@ def snapshot_cmd(
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     # FR-11d: --output - is incompatible with --json / --jsonl.
     if output_path == "-" and mode in (OutputMode.JSON, OutputMode.JSONL):
@@ -572,6 +573,7 @@ def snapshot_cmd(
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -588,21 +590,131 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
     """Async core: load config, resolve creds, run the chain, write output."""
 
     cfg_path = Path(str(config_path)).expanduser() if config_path else None
     cfg = load_config(cfg_path)
 
-    # FR-49 / FR-43c: group targets are forbidden on snapshot's sister verb
-    # (stream/record), but snapshot itself accepts a single target. Strip ``@``
-    # to keep parity with info_cmd; reject if it's a configured group name.
-    resolved_target = target.lstrip("@") or target
-    if resolved_target in cfg.groups:
-        raise UsageError(
-            f"snapshot does not accept group target {target!r}",
-            hint="Snapshot one camera at a time; loop over members in shell.",
+    # FR-43d Phase 4a: snapshot honors @group with a per-member fan-out, but
+    # only when --output is a writable path (NOT stdout). The path must
+    # contain a ``{target}`` placeholder so each camera writes to a distinct
+    # file -- silently clobbering N JPEGs into one path is the worst possible
+    # behavior. The FR-43c carve-out for ``--output -`` (binary stdout x N
+    # cameras = mess) preserves its exit-64.
+    resolved_target_initial = target.lstrip("@") or target
+    is_group = resolved_target_initial in cfg.groups
+    if is_group:
+        if output_path == "-":
+            raise UsageError(
+                "snapshot @group does not support --output - "
+                "(binary stdout x N cameras)",
+                hint=(
+                    "Pass --output <path> with a {target} placeholder, e.g. "
+                    "--output /tmp/snap-{target}.jpg, or invoke once per camera."
+                ),
+            )
+        if "{target}" not in output_path:
+            raise UsageError(
+                "snapshot @group requires --output to contain a {target} placeholder",
+                hint=(
+                    "Example: --output /tmp/snap-{target}.jpg — the placeholder "
+                    "is substituted with each camera's alias."
+                ),
+            )
+        members = list(cfg.groups[resolved_target_initial])
+
+        from tapo_cli.verbs._fanout import run_fanout
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            per_path = output_path.replace("{target}", alias)
+            record = await _run_single(
+                target=alias,
+                output_path=per_path,
+                budget_spec=budget_spec,
+                onvif_port=onvif_port,
+                mode=mode,
+                timeout=timeout,
+                config_path=config_path,
+                credential_source=credential_source,
+                cfg=cfg,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
         )
+
+    return await _run_single_emit(
+        target=target,
+        output_path=output_path,
+        budget_spec=budget_spec,
+        onvif_port=onvif_port,
+        mode=mode,
+        timeout=timeout,
+        config_path=config_path,
+        credential_source=credential_source,
+        cfg=cfg,
+    )
+
+
+async def _run_single_emit(
+    *,
+    target: str,
+    output_path: str,
+    budget_spec: str,
+    onvif_port: int,
+    mode: OutputMode,
+    timeout: float,
+    config_path: object,
+    credential_source: object,
+    cfg: Config,
+) -> int:
+    """Single-target snapshot: chain + emit record on stdout. Returns exit code."""
+    record = await _run_single(
+        target=target,
+        output_path=output_path,
+        budget_spec=budget_spec,
+        onvif_port=onvif_port,
+        mode=mode,
+        timeout=timeout,
+        config_path=config_path,
+        credential_source=credential_source,
+        cfg=cfg,
+    )
+    # Single-target path emits via the FR-11b contract. ``--output -`` already
+    # wrote bytes to stdout inside the chain; suppress the JSON record emission
+    # there to avoid corrupting the binary stream.
+    if output_path != "-":
+        emit(record, mode, formatter=_record_to_text)
+    return EXIT_SUCCESS
+
+
+async def _run_single(
+    *,
+    target: str,
+    output_path: str,
+    budget_spec: str,
+    onvif_port: int,
+    mode: OutputMode,
+    timeout: float,
+    config_path: object,
+    credential_source: object,
+    cfg: Config,
+) -> dict[str, object]:
+    """Per-target snapshot core: chain attempt, write file, return record dict.
+
+    Returns the success record. On all-tier-fail, propagates the underlying
+    DeviceError. On auth-rejection, propagates AuthError. The fan-out path
+    catches both via the standard B10 envelope.
+    """
+    # The original FR-49 / FR-43c reject — we only get here for single-target;
+    # group reject was handled by ``_run`` before calling.
+    resolved_target = target.lstrip("@") or target
 
     # Look up the device entry to get the IP. We also accept bare IPs.
     device = cfg.devices.get(resolved_target)
@@ -660,9 +772,7 @@ async def _run(
             )
             chain_attempts.append(_attempt_dict(tier1))
             if tier1.status == "pass" and tier1.payload is not None:
-                return _emit_success(
-                    tier1, ip, resolved_target, output_path, mode
-                )
+                return _write_and_record(tier1, ip, resolved_target, output_path)
     except _AuthRejectedError as exc:
         raise AuthError(
             f"snapshot auth rejected at tier {exc.mechanism!r}: {exc.detail}",
@@ -680,9 +790,7 @@ async def _run(
             )
             chain_attempts.append(_attempt_dict(tier2))
             if tier2.status == "pass" and tier2.payload is not None:
-                return _emit_success(
-                    tier2, ip, resolved_target, output_path, mode
-                )
+                return _write_and_record(tier2, ip, resolved_target, output_path)
     except _AuthRejectedError as exc:
         raise AuthError(
             f"snapshot auth rejected at tier {exc.mechanism!r}: {exc.detail}",
@@ -709,9 +817,7 @@ async def _run(
             ) from exc
         chain_attempts.append(_attempt_dict(tier3))
         if tier3.status == "pass" and tier3.payload is not None:
-            return _emit_success(
-                tier3, ip, resolved_target, output_path, mode
-            )
+            return _write_and_record(tier3, ip, resolved_target, output_path)
 
     # All tiers failed without auth-rejection → exit 1 (FR-11c).
     raise DeviceError(
@@ -726,30 +832,35 @@ async def _run(
 # ---------------------------------------------------------------------------
 
 
-def _emit_success(
+def _write_and_record(
     tier: _TierResult,
     ip: str,
     target_alias: str,
     output_path: str,
-    mode: OutputMode,
-) -> int:
-    """Write the JPEG and emit the success record per FR-11b."""
+) -> dict[str, object]:
+    """Write the JPEG and return the success record per FR-11b.
+
+    Pulled out of the original ``_emit_success`` so the fan-out path can
+    reuse the file-write + record-projection without the stdout emit step
+    (the fan-out helper does its own JSONL emission).
+    """
     assert tier.payload is not None  # invariant on a "pass" status
 
     if output_path == "-":
         # FR-11d: binary on stdout, regardless of --quiet (S15 carve-out).
+        # Group fan-out forbids this combination at the dispatcher; we only
+        # reach here in the single-target path.
         sys.stdout.buffer.write(tier.payload)
         sys.stdout.buffer.flush()
     else:
         out = Path(output_path).expanduser()
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_bytes(tier.payload)
-        # mode 0644 is best-effort; some filesystems don't honor chmod().
         with contextlib.suppress(OSError):
             out.chmod(0o644)
 
     width, height = _jpeg_dimensions(tier.payload)
-    record = {
+    return {
         "target": target_alias,
         "ip": ip,
         "mechanism": tier.mechanism,
@@ -760,14 +871,6 @@ def _emit_success(
         "ts": utc_now_rfc3339(),
         "output": output_path,
     }
-
-    # When stdout is the JPEG payload, do NOT also emit JSON on stdout — that
-    # would corrupt the binary stream. Suppress the structured emission in
-    # that case (the JSON is still emittable via -v stderr logging if desired).
-    if output_path != "-":
-        emit(record, mode, formatter=_record_to_text)
-
-    return EXIT_SUCCESS
 
 
 def _record_to_text(record: object) -> str:

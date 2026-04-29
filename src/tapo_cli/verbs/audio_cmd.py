@@ -142,6 +142,7 @@ def _dispatch(
     timeout = float(parent_state.get("timeout") or 5.0)
     config_path = parent_state.get("config_path")
     credential_source = parent_state.get("credential_source")
+    concurrency = parent_state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -154,6 +155,7 @@ def _dispatch(
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -171,9 +173,11 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
     # Up-front usage-shape checks BEFORE we open a network connection. These
-    # raise :class:`UsageError` (exit 64) without any pytapo round-trip.
+    # raise :class:`UsageError` (exit 64) without any pytapo round-trip and
+    # without fan-out (a malformed flag affects every member equally).
     if action == "volume" and (level < 0 or level > 100):
         raise UsageError(
             f"audio volume must be in [0, 100], got {level}",
@@ -187,9 +191,61 @@ async def _run(
             hint="Provide non-empty text, e.g. `audio <target> tts \"hello\"`.",
         )
 
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_audio(
+                alias=alias,
+                action=action,
+                subaction=subaction,
+                level=level,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_audio(
+        alias=target,
+        action=action,
+        subaction=subaction,
+        level=level,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_audio(
+    *,
+    alias: str,
+    action: str,
+    subaction: str | None,
+    level: int,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -201,7 +257,6 @@ async def _run(
     config_model = config_entry.model if config_entry is not None else None
     model = await resolve_model_for_target(conn.tapo, config_model=config_model)
 
-    # Capability gate per S4.
     feature_for_action = {
         "volume": "audio_speaker",
         "mic": "audio_mic",
@@ -215,37 +270,32 @@ async def _run(
         verb_name=f"audio {action}",
     )
 
-    alias = conn.target.alias
+    canonical_alias = conn.target.alias
 
     if action == "volume":
         await asyncio.to_thread(conn.tapo.setSpeakerVolume, level)
-        record: dict[str, object] = {
-            "target": alias,
+        return {
+            "target": canonical_alias,
             "action": "volume",
             "volume": level,
         }
-    elif action == "mic":
-        record = await _handle_mic(conn.tapo, alias, subaction)
-    elif action == "speaker":
-        record = await _handle_speaker(conn.tapo, alias, subaction)
-    else:  # tts — gate above already exited 5 on unsupported models
-        # If the gate passed (i.e. a future model row sets audio_tts: true)
-        # we attempt the pytapo TTS verb. Pytapo at this SHA does not expose
-        # one; surface a clear device-error envelope. When a future SHA
-        # adds it, replace this branch.
-        from tapo_cli.errors import DeviceError
+    if action == "mic":
+        return await _handle_mic(conn.tapo, canonical_alias, subaction)
+    if action == "speaker":
+        return await _handle_speaker(conn.tapo, canonical_alias, subaction)
+    # tts: capability gate above already exited 5 on unsupported models.
+    # If a future model row sets audio_tts: true we'd attempt the pytapo
+    # TTS verb; pytapo at this SHA exposes none.
+    from tapo_cli.errors import DeviceError
 
-        raise DeviceError(
-            "TTS is not implemented in pytapo at the pinned SHA",
-            target=alias,
-            hint=(
-                "Update pytapo and rebuild tapo-cli, or upstream a TTS "
-                "playback verb to pytapo."
-            ),
-        )
-
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    raise DeviceError(
+        "TTS is not implemented in pytapo at the pinned SHA",
+        target=canonical_alias,
+        hint=(
+            "Update pytapo and rebuild tapo-cli, or upstream a TTS "
+            "playback verb to pytapo."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

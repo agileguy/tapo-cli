@@ -43,12 +43,17 @@ logger = logging.getLogger("tapo_cli")
 @click.argument("action", type=click.Choice(["on", "off", "status"]))
 @click.pass_context
 def led_cmd(ctx: click.Context, target: str, action: str) -> None:
-    """Turn the camera status LED on or off, or report its state."""
+    """Turn the camera status LED on or off, or report its state.
+
+    Group fan-out (FR-43d): ``@group`` targets fan out per-camera with
+    the standard B10 envelope.
+    """
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -58,6 +63,7 @@ def led_cmd(ctx: click.Context, target: str, action: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -72,10 +78,57 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_led(
+                alias=alias,
+                action=action,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_led(
+        alias=target,
+        action=action,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_led(
+    *,
+    alias: str,
+    action: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -92,9 +145,7 @@ async def _run(
     else:  # status
         led_enabled = await asyncio.to_thread(_read_led_state, conn.tapo)
 
-    record = {"target": conn.target.alias, "led_enabled": led_enabled}
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return {"target": conn.target.alias, "led_enabled": led_enabled}
 
 
 def _read_led_state(tapo: Any) -> bool:

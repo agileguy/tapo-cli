@@ -44,6 +44,7 @@ from tapo_cli.verbs.privacy_cmd import privacy_cmd
 from tapo_cli.verbs.ptz_cmd import ptz_cmd
 from tapo_cli.verbs.reboot_cmd import reboot_cmd
 from tapo_cli.verbs.record_cmd import record_cmd
+from tapo_cli.verbs.set_cmd import set_cmd
 from tapo_cli.verbs.snapshot_cmd import snapshot_cmd
 from tapo_cli.verbs.stream_cmd import stream_cmd
 
@@ -192,6 +193,8 @@ main.add_command(osd_cmd)
 main.add_command(record_cmd)
 main.add_command(groups_cmd)
 main.add_command(batch_cmd)
+# Phase 4a verb (FR-39 / FR-39a, retro-fixed per FR-39c — slipped from Phase 2).
+main.add_command(set_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that

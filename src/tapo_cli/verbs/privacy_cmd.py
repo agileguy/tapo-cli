@@ -42,12 +42,18 @@ logger = logging.getLogger("tapo_cli")
 @click.argument("action", type=click.Choice(["enable", "disable", "status"]))
 @click.pass_context
 def privacy_cmd(ctx: click.Context, target: str, action: str) -> None:
-    """Enable, disable, or report the privacy lens-cover state."""
+    """Enable, disable, or report the privacy lens-cover state.
+
+    Accepts a single ``<target>`` (alias or bare IP) or an ``@group``
+    target — the latter fans out to every group member with FR-43a
+    exit-code semantics and one B10 envelope per camera (FR-43d).
+    """
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -57,6 +63,7 @@ def privacy_cmd(ctx: click.Context, target: str, action: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -71,10 +78,59 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+
+    # FR-43d / FR-56: group fan-out via _fanout.run_fanout.
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_privacy(
+                alias=alias,
+                action=action,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_privacy(
+        alias=target,
+        action=action,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_privacy(
+    *,
+    alias: str,
+    action: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -91,9 +147,7 @@ async def _run(
     else:  # status
         privacy_enabled = await asyncio.to_thread(_read_privacy_state, conn.tapo)
 
-    record = {"target": conn.target.alias, "privacy_enabled": privacy_enabled}
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return {"target": conn.target.alias, "privacy_enabled": privacy_enabled}
 
 
 def _read_privacy_state(tapo: Any) -> bool:
