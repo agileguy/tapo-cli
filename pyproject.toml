@@ -1,6 +1,6 @@
 [project]
 name = "tapo-cli"
-version = "0.1.3"
+version = "0.2.0"
 description = "Deterministic local-LAN CLI for TP-Link Tapo cameras and doorbells"
 readme = "README.md"
 license = { text = "MIT" }
