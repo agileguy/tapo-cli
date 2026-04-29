@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+### Fixed
+
+- `scripts/smoke.py` asyncio event-loop conflict: pytapo at the pinned SHA is synchronous but its internal `AsyncHandler` invokes `loop.run_until_complete()` on a fresh loop, which collided with the harness's outer `asyncio.run` (`RuntimeError: Cannot run the event loop while another loop is running`). The three pytapo probes now run via `asyncio.to_thread` so pytapo's loop is isolated to a worker thread.
+- `scripts/smoke.py` onvif-zeep-async WSDL discovery under Python 3.14: the upstream `_WSDL_PATH` default in `onvif/client.py` resolves to `site-packages/wsdl` — one directory too shallow, since the bundle actually lives at `site-packages/onvif/wsdl/`. Smoke now resolves the correct path at runtime via `Path(onvif.__file__).parent / "wsdl"` and passes it explicitly via `ONVIFCamera(..., wsdl_dir=...)`. Also fixed the device-info call to use the documented `await create_devicemgmt_service()` accessor.
+- `scripts/smoke.py` RTSP URL construction: tier 7 (ffmpeg) no longer depends on `pytapo.getStreamURL()` output, which on the pinned SHA returns a bare peer `host:port` rather than a full URL. Tier 7 now builds its own RTSP URL via `build_rtsp_url()` from camera config, percent-encoding usernames and passwords with `urllib.parse.quote(safe='')` so reserved characters (`@`, `:`, `/`, `!`, `?`, `#`, `&`) don't corrupt the URL. Tier 2 (`pytapo_getStreamURL`) reports pytapo's return informationally only. Added `-rtsp_transport tcp` and `-update 1` to the ffmpeg invocation for ffmpeg 8.x compatibility and deterministic single-frame capture.
+
 ### Added
 
 - Initial repository scaffold: `pyproject.toml`, `README.md`, `.gitignore`, CI workflow stub.
