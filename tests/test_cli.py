@@ -27,16 +27,21 @@ def _redirect_cache(monkeypatch, tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_top_level_help_lists_only_phase_1a_verbs() -> None:
+def test_top_level_help_lists_phase_1b_verbs() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0, result.output
     out = result.output
+    # Phase 1a foundation verbs.
     assert "auth" in out
     assert "config" in out
-    # Phase 1b/1c/1d camera verbs MUST NOT have leaked into Phase 1a.
+    # Phase 1b: the three read-only discovery verbs MUST be exposed.
+    for required in ("discover", "list", "info"):
+        assert required in out, (
+            f"Phase 1b CLI must list verb {required!r} in --help"
+        )
+    # Phase 1c/1d camera verbs are still embargoed.
     for forbidden in (
-        "discover",
         "snapshot",
         "stream",
         "record",
@@ -50,11 +55,10 @@ def test_top_level_help_lists_only_phase_1a_verbs() -> None:
         "audio",
         "osd",
         "reboot",
-        "groups",
         "batch",
     ):
         assert forbidden not in out, (
-            f"Phase 1a CLI must not list camera verb {forbidden!r} in --help"
+            f"Phase 1c/1d verb {forbidden!r} must not appear yet"
         )
 
 
@@ -63,7 +67,7 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.1.0"
+    assert PACKAGE_VERSION == "0.1.1"
 
 
 def test_auth_help_lists_three_actions() -> None:

@@ -1,95 +1,36 @@
 """Click-based CLI surface for tapo-cli (SRD §8).
 
-Phase 1a wires up only the meta verbs (``auth``, ``config``); camera verbs
-ship in Phase 1b/1c/1d. The top-level group:
+The top-level group registers every verb (auth/config/discover/list/info
+through Phase 1b; snapshot/stream/record/ptz/etc in later phases) and:
 
-* maps every :class:`TapoCliError` subclass to its fixed exit code (§11.1),
-* installs SIGINT/SIGTERM handlers (Phase 1a: convert to exit 130/143; the
-  full graceful-drain behavior of FR-31c is later phases),
-* configures stderr JSON-line logging (`-v` → INFO, `-vv` → DEBUG, default
-  WARNING).
+* configures stderr JSON-line logging (``-v`` → INFO, ``-vv`` → DEBUG,
+  default WARNING).
+* threads a state dict (mode, timeout, config_path, credential_source,
+  …) into the Click context so verb modules don't re-parse top-level
+  flags.
 
-The async runner sits here and not in __main__ because individual verb
-runners may want to share it (Phase 1b's ``discover`` will).
+The async runner with TapoCliError → exit-code mapping lives in
+:mod:`tapo_cli.runner` so verb modules can import it without circling
+back through this file.
 """
 
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import logging
-import signal
 import sys
-from collections.abc import Callable, Coroutine
-from typing import Any
 
 import click
 
 import tapo_cli as _pkg
-from tapo_cli.errors import (
-    EXIT_SIGINT,
-    EXIT_SIGTERM,
-    EXIT_USAGE_ERROR,
-    StructuredError,
-    TapoCliError,
-)
-from tapo_cli.output import OutputMode, detect_mode, emit_error
+from tapo_cli.errors import EXIT_USAGE_ERROR
+from tapo_cli.output import detect_mode
+from tapo_cli.runner import run_async as _run_async
 from tapo_cli.verbs.auth_cmd import auth_group
 from tapo_cli.verbs.config_cmd import config_group
-
-# ---------------------------------------------------------------------------
-# Async runner with TapoCliError → exit-code mapping
-# ---------------------------------------------------------------------------
-
-
-def _run_async(
-    coro_factory: Callable[[], Coroutine[Any, Any, int]],
-    *,
-    mode: OutputMode,
-) -> int:
-    """Run an async coroutine factory, mapping errors to exit codes.
-
-    Signal handling: install handlers that re-raise as ``KeyboardInterrupt``
-    for SIGINT or ``SystemExit(143)`` for SIGTERM. Phase 1a does not yet do
-    graceful batch/group drain — that is later phases.
-    """
-
-    def _handle_sigint(*_args: object) -> None:
-        raise KeyboardInterrupt
-
-    def _handle_sigterm(*_args: object) -> None:
-        raise SystemExit(EXIT_SIGTERM)
-
-    prior_int = signal.getsignal(signal.SIGINT)
-    prior_term = signal.getsignal(signal.SIGTERM)
-    try:
-        signal.signal(signal.SIGINT, _handle_sigint)
-        with contextlib.suppress(OSError, ValueError):
-            signal.signal(signal.SIGTERM, _handle_sigterm)
-
-        try:
-            return asyncio.run(coro_factory())
-        except KeyboardInterrupt:
-            return EXIT_SIGINT
-        except SystemExit as exc:
-            code = exc.code if isinstance(exc.code, int) else EXIT_SIGTERM
-            return int(code)
-        except TapoCliError as exc:
-            emit_error(exc.to_structured(), mode)
-            return exc.exit_code
-        except Exception as exc:
-            err = StructuredError(
-                error="device_error",
-                exit_code=1,
-                message=f"Unhandled error: {type(exc).__name__}: {exc}",
-            )
-            emit_error(err, mode)
-            return 1
-    finally:
-        signal.signal(signal.SIGINT, prior_int)
-        with contextlib.suppress(OSError, ValueError):
-            signal.signal(signal.SIGTERM, prior_term)
-
+from tapo_cli.verbs.discover_cmd import discover_cmd
+from tapo_cli.verbs.info_cmd import info_cmd
+from tapo_cli.verbs.list_cmd import list_cmd
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -206,11 +147,13 @@ def main(
     }
 
 
-# Register sub-verb groups. Camera verbs are intentionally NOT registered here
-# yet — Phase 1b/1c/1d add them.
 main.add_command(auth_group)
 main.add_command(config_group)
+main.add_command(discover_cmd)
+main.add_command(list_cmd)
+main.add_command(info_cmd)
 
 
-# Re-exports. ``_run_async`` is exposed for Phase 1b verb modules.
+# Re-export the runner under its old name for any downstream call site that
+# imports ``_run_async`` from this module (kept for ABI continuity).
 __all__ = ["_run_async", "main"]
