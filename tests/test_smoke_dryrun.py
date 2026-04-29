@@ -107,24 +107,25 @@ def test_one_mechanism_failure_does_not_abort_others(smoke, monkeypatch, tmp_pat
     def boom(*_a, **_kw):
         raise RuntimeError("simulated upstream failure")
 
-    monkeypatch.setattr(smoke, "probe_pytapo_basic_info", lambda c: smoke.MechanismResult(
-        name="pytapo_getBasicInfo", status="fail", elapsed_ms=1.0, detail="simulated"
-    ))
-    monkeypatch.setattr(
-        smoke,
-        "probe_pytapo_stream_url",
-        lambda c: (
+    async def fake_basic(_c):
+        return smoke.MechanismResult(
+            name="pytapo_getBasicInfo", status="fail", elapsed_ms=1.0, detail="simulated"
+        )
+
+    async def fake_stream(_c):
+        return (
             smoke.MechanismResult(name="pytapo_getStreamURL", status="fail", detail="simulated"),
             None,
-        ),
-    )
-    monkeypatch.setattr(
-        smoke,
-        "probe_pytapo_native_snapshot",
-        lambda c, raw: smoke.MechanismResult(
+        )
+
+    async def fake_native(_c, _raw):
+        return smoke.MechanismResult(
             name="pytapo_native_snapshot", status="skipped", detail="api absent"
-        ),
-    )
+        )
+
+    monkeypatch.setattr(smoke, "probe_pytapo_basic_info", fake_basic)
+    monkeypatch.setattr(smoke, "probe_pytapo_stream_url", fake_stream)
+    monkeypatch.setattr(smoke, "probe_pytapo_native_snapshot", fake_native)
 
     async def fake_onvif(_cam, _raw_dir):
         return [

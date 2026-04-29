@@ -146,14 +146,16 @@ async def _atimed(coro):
     return result, (time.perf_counter() - start) * 1000.0
 
 
-def probe_pytapo_basic_info(cam: dict[str, Any]) -> MechanismResult:
+async def probe_pytapo_basic_info(cam: dict[str, Any]) -> MechanismResult:
     from pytapo import Tapo
 
     def _run() -> dict[str, Any]:
         tapo = Tapo(cam["ip"], cam["username"], cam["password"])
         return tapo.getBasicInfo()
 
-    out, elapsed = _timed(_run)
+    # pytapo is sync but its AsyncHandler runs its own loop.run_until_complete;
+    # call it on a worker thread so it doesn't collide with our outer loop.
+    out, elapsed = await _atimed(asyncio.to_thread(_run))
     if isinstance(out, Exception):
         return MechanismResult(
             name="pytapo_getBasicInfo",
@@ -170,7 +172,7 @@ def probe_pytapo_basic_info(cam: dict[str, Any]) -> MechanismResult:
     )
 
 
-def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult, str | None]:
+async def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult, str | None]:
     """Returns (result, raw_rtsp_url-or-None). Raw URL stays in-process; never printed."""
     from pytapo import Tapo
 
@@ -178,7 +180,7 @@ def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult, str |
         tapo = Tapo(cam["ip"], cam["username"], cam["password"])
         return tapo.getStreamURL()
 
-    out, elapsed = _timed(_run)
+    out, elapsed = await _atimed(asyncio.to_thread(_run))
     if isinstance(out, Exception):
         return (
             MechanismResult(
@@ -210,7 +212,7 @@ def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult, str |
     )
 
 
-def probe_pytapo_native_snapshot(cam: dict[str, Any], raw_dir: Path) -> MechanismResult:
+async def probe_pytapo_native_snapshot(cam: dict[str, Any], raw_dir: Path) -> MechanismResult:
     """pytapo at the pinned SHA has no first-class single-frame snapshot API.
 
     We attempt ``getMediaSession()`` as a best-effort liveness check on the
@@ -226,7 +228,7 @@ def probe_pytapo_native_snapshot(cam: dict[str, Any], raw_dir: Path) -> Mechanis
             raise AttributeError("pytapo at pinned SHA has no getMediaSession() — skip tier")
         return tapo.getMediaSession()
 
-    out, elapsed = _timed(_run)
+    out, elapsed = await _atimed(asyncio.to_thread(_run))
     if isinstance(out, AttributeError):
         return MechanismResult(
             name="pytapo_native_snapshot",
@@ -481,14 +483,14 @@ async def run_camera(cam: dict[str, Any], raw_dir: Path) -> CameraResult:
     result = CameraResult(alias=cam["alias"], ip=cam["ip"], model=cam["model"])
 
     # (a) pytapo getBasicInfo
-    result.mechanisms.append(probe_pytapo_basic_info(cam))
+    result.mechanisms.append(await probe_pytapo_basic_info(cam))
 
     # (b) pytapo getStreamURL — keeps raw URL in-process for tier (g).
-    stream_result, rtsp_url = probe_pytapo_stream_url(cam)
+    stream_result, rtsp_url = await probe_pytapo_stream_url(cam)
     result.mechanisms.append(stream_result)
 
     # (c) pytapo native snapshot — best-effort.
-    result.mechanisms.append(probe_pytapo_native_snapshot(cam, raw_dir))
+    result.mechanisms.append(await probe_pytapo_native_snapshot(cam, raw_dir))
 
     # (d, e, f) ONVIF mechanisms.
     result.mechanisms.extend(await probe_onvif(cam, raw_dir))
