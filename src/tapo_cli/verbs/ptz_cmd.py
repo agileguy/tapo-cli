@@ -179,6 +179,7 @@ def _run_motion(
     timeout = float(parent_state.get("timeout") or 5.0)
     config_path = parent_state.get("config_path")
     credential_source = parent_state.get("credential_source")
+    concurrency = parent_state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -193,6 +194,7 @@ def _run_motion(
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -212,10 +214,81 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    # Load the config so we can detect group targets BEFORE connecting.
+    cfg, _ = load_config_with_target(target, config_path)
+
+    # Group fan-out (FR-39..43): dispatch per-member if the target names
+    # a configured group.
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_ptz(
+                alias=alias,
+                action=action,
+                direction=direction,
+                step=step,
+                pan=pan,
+                tilt=tilt,
+                zoom=zoom,
+                timeout=timeout,
+                config_path=config_path,
+                credential_source=credential_source,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_ptz(
+        alias=target,
+        action=action,
+        direction=direction,
+        step=step,
+        pan=pan,
+        tilt=tilt,
+        zoom=zoom,
+        timeout=timeout,
+        config_path=config_path,
+        credential_source=credential_source,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_ptz(
+    *,
+    alias: str,
+    action: str,
+    direction: str | None,
+    step: int,
+    pan: int,
+    tilt: int,
+    zoom: int,
+    timeout: float,
+    config_path: object,
+    credential_source: object,
+) -> dict[str, object]:
+    """Run one PTZ op on ``alias`` and return the record dict.
+
+    Pulled out of :func:`_run` so the group-fan-out helper can reuse it
+    per-member without the emit step.
+    """
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -255,13 +328,7 @@ async def _run(
         record["step"] = step
         record["step_unit"] = step_unit
     elif action == "zoom":
-        # Zoom is always device-step-units. Pytapo at the pinned SHA does not
-        # expose a discrete zoom verb on the C-series — operators on dual-lens
-        # models (C225) drive zoom via lens-switch profiles in the stream
-        # verb. We honor the SRD's exit-5 contract for non-zoom models via
-        # ``require_ptz(require_zoom=True)`` above; reaching this branch on a
-        # zoom-capable model with no pytapo handle is a future-firmware gap
-        # we surface as a device error.
+        # Zoom is always device-step-units.
         signed = step if direction == "in" else -step
         await asyncio.to_thread(_call_zoom, conn.tapo, signed)
         record["direction"] = direction
@@ -277,8 +344,7 @@ async def _run(
         record["step_unit"] = step_unit
 
     record["elapsed_ms"] = int((time.monotonic() - started) * 1000)
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return record
 
 
 # ---------------------------------------------------------------------------
