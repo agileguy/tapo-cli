@@ -106,17 +106,17 @@ def test_motion_status_includes_sensitivity(tmp_path: Path, monkeypatch) -> None
     assert all(c[0] != "set" for c in fake.calls)
 
 
-def test_motion_history_exits_5(tmp_path: Path, monkeypatch) -> None:
-    """history is reserved for Phase 3; Phase 1d returns
-    ``unsupported_feature`` (exit 5) with a hint pointing forward."""
+def test_motion_history_legacy_positional_form_runs(tmp_path: Path, monkeypatch) -> None:
+    """Phase 3 implements ``history``. The legacy positional form
+    (``motion <target> history``) must still work (no flags) and emit
+    an empty JSON array when the camera reports no events."""
     fake = _FakeTapo()
+    fake.getEvents = lambda *args, **kwargs: []  # type: ignore[method-assign]
     _patch_connect(monkeypatch, fake)
     runner = CliRunner()
     result = runner.invoke(
         main, ["--config", str(_cfg(tmp_path)), "--json", "motion", "office", "history"]
     )
-    assert result.exit_code == 5, result.output
-    err = json.loads(result.output.strip().splitlines()[-1])
-    assert err["error"] == "unsupported_feature"
-    assert err["exit_code"] == 5
-    assert "Phase 3" in err.get("hint", "")
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.stdout)
+    assert parsed == []

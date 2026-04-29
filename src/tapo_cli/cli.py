@@ -29,8 +29,10 @@ from tapo_cli.runner import run_async as _run_async
 from tapo_cli.verbs.alarm_cmd import alarm_cmd
 from tapo_cli.verbs.audio_cmd import audio_cmd
 from tapo_cli.verbs.auth_cmd import auth_group
+from tapo_cli.verbs.batch_cmd import batch_cmd
 from tapo_cli.verbs.config_cmd import config_group
 from tapo_cli.verbs.discover_cmd import discover_cmd
+from tapo_cli.verbs.groups_cmd import groups_cmd
 from tapo_cli.verbs.info_cmd import info_cmd
 from tapo_cli.verbs.led_cmd import led_cmd
 from tapo_cli.verbs.list_cmd import list_cmd
@@ -41,6 +43,7 @@ from tapo_cli.verbs.preset_cmd import preset_cmd
 from tapo_cli.verbs.privacy_cmd import privacy_cmd
 from tapo_cli.verbs.ptz_cmd import ptz_cmd
 from tapo_cli.verbs.reboot_cmd import reboot_cmd
+from tapo_cli.verbs.record_cmd import record_cmd
 from tapo_cli.verbs.snapshot_cmd import snapshot_cmd
 from tapo_cli.verbs.stream_cmd import stream_cmd
 
@@ -185,6 +188,10 @@ main.add_command(preset_cmd)
 main.add_command(alarm_cmd)
 main.add_command(audio_cmd)
 main.add_command(osd_cmd)
+# Phase 3 verbs (FR-13, FR-25, FR-39..43, FR-44..45c).
+main.add_command(record_cmd)
+main.add_command(groups_cmd)
+main.add_command(batch_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that

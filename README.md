@@ -2,7 +2,7 @@
 
 Deterministic, scriptable command-line tool for discovering, querying, and controlling TP-Link Tapo cameras and wired doorbells on the local LAN. Sister project to [`kasa-cli`](https://github.com/agileguy/kasa-cli) — same product philosophy, different protocol surface.
 
-**Status:** Pre-alpha. SRD frozen at v1.1.1. Phase 0 (hardware smoke-test gate) in progress.
+**Status:** v0.3.0 — feature-complete for v1. SRD frozen at v1.1.1. All Phase 0 / 1 / 2 / 3 verbs ship, verified against a live Tapo C200 at every phase boundary.
 
 ---
 
@@ -42,11 +42,39 @@ Cloud-account credentials are **shared with `kasa-cli`** by default — same TP-
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 0 | Hardware smoke-test gate (pytapo SHA pin + per-camera fixture capture) | In progress |
-| 1 | MVP — discover, list, info, snapshot, stream, basic state, reboot | Pending Phase 0 |
-| 2 | PTZ, presets, alarm, audio, OSD | Pending Phase 1 |
-| 3 | record, motion history, groups, batch, signal handling | Pending Phase 2 |
+| 0 | Hardware smoke-test gate (pytapo SHA pin + per-camera fixture capture) | Shipped |
+| 1 | MVP — discover, list, info, snapshot, stream, basic state, reboot | Shipped |
+| 2 | PTZ, presets, alarm, audio, OSD | Shipped |
+| 3 | record, motion history, groups, batch, signal handling | Shipped (v0.3.0) |
 | 4 | Reserved (no commitment) | Deferred |
+
+## v0.3.0 verbs
+
+Every in-scope SRD verb ships in v0.3.0. The full surface:
+
+| Verb | What it does |
+|------|--------------|
+| `auth status / flush / migrate` | pytapo session-cache management + credential migration |
+| `config show / validate` | inspect / lint the resolved TOML config |
+| `discover` | LAN-scan for Tapo cameras over WS-Discovery |
+| `list` | enumerate configured aliases |
+| `info <target>` | full Camera record over pytapo `getBasicInfo` |
+| `snapshot <target> --output PATH` | three-mechanism JPEG capture (pytapo → ONVIF → ffmpeg) |
+| `stream <target>` | emit `rtsp://...` URL on stdout (Unix philosophy; pipe to ffmpeg/mpv) |
+| `record <target> --output PATH` | one-shot ffmpeg recording with `--duration` / `--max-bytes` cap |
+| `privacy <target> enable\|disable\|status` | privacy-mode (lens cover / feed disable) |
+| `led <target> on\|off\|status` | front status LED |
+| `night-vision <target> auto\|on\|off\|ir-only` | night-vision mode |
+| `motion <target> enable\|disable\|status` | motion-detection toggle + sensitivity report |
+| `motion history <target> [--since ... --limit ... --event-type ...]` | RFC 3339 UTC motion-event timeline |
+| `reboot <target>` | reboot the camera (tty prompt + `--yes` non-tty guard) |
+| `ptz <target> pan\|tilt\|zoom\|move\|stop` | pan / tilt / zoom motors |
+| `preset <target> list\|goto\|save\|delete` | saved-position registry |
+| `alarm <target> enable\|disable\|trigger\|status` | siren control |
+| `audio <target> volume\|mic\|speaker\|tts` | speaker volume / mic-mute / TTS playback |
+| `osd <target> set\|clear\|status` | on-screen-display overlay |
+| `groups list` | read-only group enumeration (mutations by hand-editing config) |
+| `batch --stdin\|--file` | newline-delimited sub-command runner with B10 JSONL output |
 
 ## License
 

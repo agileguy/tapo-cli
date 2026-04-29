@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-29
+
+Phase 3 — `record`, `motion history`, `groups list`, and `batch` verbs land on top of every prior phase. This is the v1 feature-complete release: every in-scope SRD requirement now ships.
+
+### Added
+
+- `tapo-cli record <target> --output PATH` (FR-13..13g, S3) — one-shot RTSP-to-MP4 recording via an `ffmpeg` foreground child. Footgun guard (FR-13a): non-tty mode requires `--duration <seconds>` or `--max-bytes <N>`; tty mode without a cap prompts on stderr ("Record indefinitely until Ctrl-C? [y/N]") and aborts on `N` / empty. `--duration` → `ffmpeg -t`, `--max-bytes` → `ffmpeg -fs`. SIGINT/SIGTERM forwards to ffmpeg with 2 s grace for MP4-atom finalization (FR-13b/g, S3 perf budget); SIGKILL after 2 s. ffmpeg-missing-on-PATH exits 6 (FR-13c). Group-target `@group` → exit 64 parity with `stream` (FR-43c). Camera-account-only path (FR-CRED-7); missing → exit 2. Output JSON: `{target, output_path, duration_seconds, bytes, exit_reason}` where `exit_reason` is one of `complete | sigint | sigterm | max-bytes | max-duration | ffmpeg-error`.
+- `tapo-cli motion history <target> [--since <RFC3339>] [--limit N] [--event-type ...]` (FR-25..25d, B8) — emits per-event JSONL by default with `{target, ts, event_type, region, has_clip}`. `ts` is RFC 3339 UTC `Z` (FR-25a). `--since` accepts RFC 3339 with offset, RFC 3339 without offset (assumes UTC + INFO log on stderr per FR-25b), bare `YYYY-MM-DD` dates (treated as `T00:00:00Z`), and relative shorthand (`1h`, `30m`, `7d`, `60s`). Default window is the last 24 h. Results are sorted ascending by `ts` (FR-25c). Future `--since` exits 0 with empty output (FR-25d). `--event-type` filter accepts `motion | person | vehicle | doorbell-press | unknown`. `--limit` (default 50) truncates AFTER the sort. Backed by pytapo's `getEvents()` with the camera-clock-corrected epoch timestamps.
+- `tapo-cli groups list` (FR-39..43, FR-43b) — read-only enumeration of every group defined in `[groups]` with member aliases and resolved IPs. Output is one record per group; `{name, members: [{alias, ip}, ...]}`. Empty / missing `[groups]` table → exit 0 with empty array. Per FR-43b, group mutations remain by hand-editing the config in v1 — same posture as `kasa-cli`.
+- `tapo-cli batch [--stdin | --file PATH]` (FR-44..45c, B10) — reads newline-delimited sub-commands and executes them sequentially, emitting one JSONL line per result on stdout. Per-line shape conforms to B10: `{command, target, status, exit_code, result?, error?}`. `result` is the verb's normal `--json` payload on success; `error` is the structured §11.2 envelope minus the wrapping `exit_code` on failure. Comments (`#`) and blank lines are skipped (FR-45b). Empty input → exit 0 silently. Exit codes per FR-43a / FR-45a: `0` if all pass, `7` (partial-failure) if mixed, the first sub-op's exit code if all fail (B9 deterministic ordering — input-file order, NOT completion order). `--stdin` and `--file` are mutually exclusive (exit 64). Each sub-call is dispatched in-process through the top-level Click group with `--json` injected, so `result` parses cleanly.
+- Group-target `@group` fan-out groundwork — every camera-control verb correctly accepts `@alias` as a single-alias target (the leading `@` is stripped). The verbs that explicitly reject groups (`stream` / `record` per FR-43c) continue to do so.
+- Test suite: 44 new tests (was 325 in Phase 2 → 369 in Phase 3). New: `tests/test_record_cmd.py` (10 tests covering footgun guard, ffmpeg argv shape, SIGINT/SIGTERM forwarding, group rejection, missing-ffmpeg, missing-camera-account), `tests/test_motion_history_cmd.py` (12 tests covering `--since` parsing variants, future-`--since` empty-array path, sort determinism, event-type classification, limit truncation), `tests/test_groups_cmd.py` (5 tests covering text / json / jsonl / quiet modes plus empty `[groups]`), `tests/test_batch_cmd.py` (12 tests covering input shapes, B10 per-line schema, FR-43a / B9 exit-code semantics), `tests/test_signals.py` (6 tests pinning runner SIGINT→130 / SIGTERM→143 mapping). Mock-only — no real network. The `test_motion_history_exits_5` block from Phase 1d is replaced with a "history runs" assertion since Phase 3 implements it.
+
+### Changed
+
+- `motion` is now a custom Click `Command` instead of a leaf command — the parser dispatches between the legacy flat positional form (`motion <target> enable|disable|status|history`) and the new sub-verb form (`motion history <target> [--since ... --limit ... --event-type ...]`) based on the first argv token. Both forms are honored.
+- `cli.py` registers three new verbs: `record_cmd`, `groups_cmd`, `batch_cmd`. `motion_cmd` stays a leaf at the top level.
+- Bumped version `0.2.0` → `0.3.0` in both `pyproject.toml` and `src/tapo_cli/__init__.py`. v0.3.0 is the v1 feature-complete release.
+
 ## [0.1.2] — 2026-04-29
 
 Phase 1c — `snapshot` and `stream` verbs land on top of the Phase 1a/1b foundation.
