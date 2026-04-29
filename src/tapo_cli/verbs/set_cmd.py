@@ -45,8 +45,8 @@ import sys
 
 import click
 
-from tapo_cli.errors import EXIT_SUCCESS, UsageError
-from tapo_cli.output import OutputMode, emit
+from tapo_cli.errors import EXIT_SUCCESS, EXIT_USAGE_ERROR, UsageError
+from tapo_cli.output import OutputMode, emit, emit_error
 from tapo_cli.runner import run_async as _run_async
 from tapo_cli.verbs._target import load_config_with_target
 
@@ -82,8 +82,22 @@ def set_cmd(
     timezone: str | None,
 ) -> None:
     """Apply one or more device-config changes (FR-39 / FR-39a, Phase 4a)."""
+    state = ctx.obj
+    mode: OutputMode = state["mode"]
+    timeout = float(state.get("timeout") or 5.0)
+    config_path = state.get("config_path")
+    credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
+
+    # Up-front usage-shape check BEFORE launching the async runner. Raising
+    # UsageError from inside an asyncio coroutine routes through asyncio's
+    # exception machinery in a way that some Python versions surface as
+    # exit 1 to CliRunner (the TapoCliError handler in runner.py runs but
+    # CliRunner can still pick up the exception via .invoke()'s exception
+    # capture). Validating synchronously here guarantees deterministic
+    # exit 64 across all supported Python versions.
     if image_flip is None and timezone is None:
-        raise UsageError(
+        err = UsageError(
             "set requires at least one of --image-flip or --timezone",
             target=target,
             hint=(
@@ -91,13 +105,8 @@ def set_cmd(
                 "Other knobs (HDR, noise cancelling, etc.) are deferred per FR-39b."
             ),
         )
-
-    state = ctx.obj
-    mode: OutputMode = state["mode"]
-    timeout = float(state.get("timeout") or 5.0)
-    config_path = state.get("config_path")
-    credential_source = state.get("credential_source")
-    concurrency = state.get("concurrency")
+        emit_error(err.to_structured(), mode)
+        sys.exit(EXIT_USAGE_ERROR)
 
     rc = _run_async(
         lambda: _run(
@@ -126,6 +135,10 @@ async def _run(
     credential_source: object,
     concurrency: int | None = None,
 ) -> int:
+    # Validation moved to set_cmd (sync handler) for deterministic exit 64
+    # across all supported Python versions; see comment there.
+    assert image_flip is not None or timezone is not None
+
     from tapo_cli.verbs._fanout import (
         group_members,
         is_group_target,
