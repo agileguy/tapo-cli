@@ -6,6 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-04-28
+
+Phase 1a (Foundation) — first release with executable CLI surface. No camera verbs yet; those land in Phase 1b/1c/1d.
+
+### Added
+
+- `tapo_cli` package: `__init__`, `__main__`, `cli`, `errors`, `types`, `config`, `credentials`, `auth_cache`, `output`, `wrapper`, `verbs/auth_cmd`, `verbs/config_cmd`.
+- `tapo-cli --help` / `--version` / global flags: `--json`, `--jsonl`, `--quiet`, `--timeout`, `--config`, `--concurrency`, `--credential-source`, `-v`/`-vv`.
+- `tapo-cli auth status` (FR-CRED-14) — emits per-cache rows with alias, MAC, cache_path, mtime (RFC 3339 UTC), bytes_size, expires_at, pytapo_version, cloud_account, camera_account.
+- `tapo-cli auth flush [--target ALIAS|MAC]` (FR-CRED-12) — removes all or one cached pytapo session state file.
+- `tapo-cli auth migrate` (FR-CRED-15a) — version-stamps the tapo-only credentials file at `~/.config/tapo-cli/credentials`. Refuses to touch `~/.config/kasa-cli/credentials` per FR-CRED-3.1.
+- `tapo-cli config show` (FR-54a) — canonical TOML render of the resolved config.
+- `tapo-cli config validate [<path>]` (FR-54c) — schema lint, exit 0 / 6.
+- TOML config loader (SRD §9): `[defaults]`, `[credentials]`, `[ffmpeg]`, `[logging]`, `[devices.<alias>]`, `[groups]`. Strict mode for `--config` and `TAPO_CLI_CONFIG`.
+- Credential resolver (SRD §6.1-6.7) covering camera-account-first chain, cloud-account fallback, partial-env-fall-through with one-shot WARN, FR-CRED-3.1 kasa-cli sharing with tapo-only override priority, chmod 0600 enforcement, symlink refusal, length validation for camera accounts.
+- pytapo session cache (SRD §6.5, FR-CRED-9..13): atomic-rename writes (`tmpfile + fsync + rename`), per-MAC `flock` with `--timeout` (lock timeout exits 3), `pytapo_version` invalidation, credential-source mismatch invalidation, opaque state blob, RFC 3339 expires_at metadata, holder-PID best-effort on Linux.
+- Output formatter (SRD §5.17, §7.2): auto-mode JSONL on non-tty (FR-46), `--quiet` carve-out for binary stdout (S15), RFC 3339 UTC timestamps, deterministic multi-record sort (target in config order, ties by event timestamp).
+- Structured error envelope (SRD §11.2): `{error, exit_code, message, target?, hint?, mechanism?, credential?, details?}` with closed-enum error names.
+- Exit-code constants for all 0/1/2/3/4/5/6/7/64/130/143 paths (SRD §11.1).
+- Test suite: 134 tests (was 28 in Phase 0). New: `test_errors.py`, `test_config.py`, `test_credentials.py`, `test_auth_cache.py`, `test_output.py`, `test_cli.py`. Mock-only — no real network.
+
 ### Fixed
 
 - `scripts/smoke.py` asyncio event-loop conflict: pytapo at the pinned SHA is synchronous but its internal `AsyncHandler` invokes `loop.run_until_complete()` on a fresh loop, which collided with the harness's outer `asyncio.run` (`RuntimeError: Cannot run the event loop while another loop is running`). The three pytapo probes now run via `asyncio.to_thread` so pytapo's loop is isolated to a worker thread.
