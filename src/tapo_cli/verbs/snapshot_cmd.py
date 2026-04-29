@@ -37,7 +37,7 @@ from typing import Any
 
 import click
 
-from tapo_cli.config import load_config
+from tapo_cli.config import Config, load_config
 from tapo_cli.errors import (
     EXIT_SUCCESS,
     EXIT_USAGE_ERROR,
@@ -600,15 +600,16 @@ async def _run(
     # FR-43d Phase 4a: snapshot honors @group with a per-member fan-out, but
     # only when --output is a writable path (NOT stdout). The path must
     # contain a ``{target}`` placeholder so each camera writes to a distinct
-    # file — silently clobbering N JPEGs into one path is the worst possible
-    # behavior. The FR-43c carve-out for ``--output -`` (binary stdout × N
+    # file -- silently clobbering N JPEGs into one path is the worst possible
+    # behavior. The FR-43c carve-out for ``--output -`` (binary stdout x N
     # cameras = mess) preserves its exit-64.
     resolved_target_initial = target.lstrip("@") or target
     is_group = resolved_target_initial in cfg.groups
     if is_group:
         if output_path == "-":
             raise UsageError(
-                f"snapshot @group does not support --output - (binary stdout × N cameras)",
+                "snapshot @group does not support --output - "
+                "(binary stdout x N cameras)",
                 hint=(
                     "Pass --output <path> with a {target} placeholder, e.g. "
                     "--output /tmp/snap-{target}.jpg, or invoke once per camera."
@@ -671,7 +672,7 @@ async def _run_single_emit(
     timeout: float,
     config_path: object,
     credential_source: object,
-    cfg: object,
+    cfg: Config,
 ) -> int:
     """Single-target snapshot: chain + emit record on stdout. Returns exit code."""
     record = await _run_single(
@@ -703,7 +704,7 @@ async def _run_single(
     timeout: float,
     config_path: object,
     credential_source: object,
-    cfg: object,
+    cfg: Config,
 ) -> dict[str, object]:
     """Per-target snapshot core: chain attempt, write file, return record dict.
 

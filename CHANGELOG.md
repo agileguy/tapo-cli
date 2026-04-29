@@ -6,6 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-04-29
+
+Phase 4a per SRD §16.4.1 — fan-out generalization (FR-43d, FR-56/56a/56b), `set` verb retro-fix (FR-39c, slipped from Phase 2), and group-level `reboot` confirmation (FR-43e/f).
+
+### Added
+
+- `tapo-cli set <target> [--image-flip on|off] [--timezone <IANA>]` (FR-39, FR-39a, FR-39c) — Phase 2 acceptance item that slipped past v0.2.0; v1.2.0 audit (A-3) catalogued the gap and Phase 4a ships the retro-fix. `--image-flip` drives pytapo `setImageFlipVertical(bool)` (the on-device 180° image rotation, NOT fisheye correction). `--timezone` drives `setTimezone(timezone, zoneID, timingMode="ntp")`. Pytapo at the pinned SHA (`de5ca37`) does not expose an IANA→zone_id lookup; the wrapper passes the IANA value as both fields, which current C-series firmware accepts. Bare `set <target>` exits 64 — at least one flag is required. Other knobs (HDR, noise cancelling, auto-track, recording-to-SD enable) remain deferred to v0.4+ per FR-39b. Output: `{target, changes: {<flag>: <value>}}`.
+- Group fan-out (FR-43d, FR-56/56a/56b) generalized across every state-control verb listed in FR-43d's enumeration: `info`, `privacy`, `led`, `night-vision`, `motion {enable|disable|status|history}`, `alarm {enable|disable|trigger|status}`, `audio {volume|mic|speaker|tts}`, `osd {set|clear|status}`, `preset {list|goto|save|delete}`, `reboot`, `snapshot`, and the new `set` verb. Each verb's existing single-target work-function is now wrapped by an `is_group_target` check that dispatches through `_fanout.run_fanout` with the standard B10 envelope (`{target, status, exit_code, result?, error?}`). Per-target results emit one JSONL line in resolved-alias-list order (B9 deterministic). Exit codes follow FR-43a: `0` if all pass, `7` if mixed, the first member's exit code if all fail.
+- `snapshot @group --output <path>` requires a `{target}` placeholder in the path (e.g. `--output /tmp/snap-{target}.jpg`) — silently clobbering N JPEGs into one file is the worst possible behavior. Without the placeholder → exit 64 with an actionable hint. `snapshot @group --output -` continues to exit 64 (binary stdout × N cameras = mess).
+- `reboot @group` group-level confirmation (FR-43e, FR-43f). One stderr prompt enumerating the resolved member aliases — NOT one prompt per camera. `--yes` and `--quiet` short-circuit the prompt. Non-tty without `--yes` exits 64. Per-camera fan-out then proceeds with no further prompts.
+- Test suite: new tests cover fan-out integration across every migrated verb (`tests/test_fanout_integration.py`), the `set` verb's flag combinations (`tests/test_set_cmd.py`), and the `reboot @group` confirmation matrix (`tests/test_reboot_group_confirm.py`). Existing per-verb test files gain `@group` regression cases.
+
+### Changed
+
+- `stream` and `record` continue to reject `@group` targets with exit 64 (FR-43c carve-out unchanged) — recording or URL-emitting against multiple cameras simultaneously is a footgun.
+- `cli.py` registers the new `set` verb. Top-level `--help` now lists it.
+- Bumped version `0.3.0` → `0.3.1` in both `pyproject.toml` and `src/tapo_cli/__init__.py`.
+
+### Notes
+
+- pytapo at pin `de5ca37` does NOT expose any device-rename API (`setName` / `changeName` / `setAlias` / `setDeviceName` are all absent). A `set --name` flag was outside SRD §16.4.1 scope and is not included; rename a device by editing the local `[devices.<alias>]` block in `~/.config/tapo-cli/config.toml`.
+
 ## [0.3.0] — 2026-04-29
 
 Phase 3 — `record`, `motion history`, `groups list`, and `batch` verbs land on top of every prior phase. This is the v1 feature-complete release: every in-scope SRD requirement now ships.

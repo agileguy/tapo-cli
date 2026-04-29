@@ -60,6 +60,10 @@ def test_top_level_help_lists_phase_1cd_verbs() -> None:
         assert required in out, (
             f"Phase 3 CLI must list verb {required!r} in --help"
         )
+    # Phase 4a: set verb (FR-39c retro-fix) MUST be exposed.
+    assert " set " in out, (
+        "Phase 4a CLI must list the new 'set' verb in --help (FR-39c)"
+    )
 
 
 def test_version_emits_package_version() -> None:
@@ -67,7 +71,23 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.3.0"
+    assert PACKAGE_VERSION == "0.3.1"
+
+
+def test_set_help_lists_image_flip_and_timezone() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["set", "--help"])
+    assert result.exit_code == 0
+    assert "--image-flip" in result.output
+    assert "--timezone" in result.output
+
+
+def test_motion_history_help_honors_event_type_filter() -> None:
+    """``motion history --help`` MUST advertise ``--event-type`` (FR-25)."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["motion", "history", "--help"])
+    assert result.exit_code == 0
+    assert "--event-type" in result.output
 
 
 def test_auth_help_lists_three_actions() -> None:

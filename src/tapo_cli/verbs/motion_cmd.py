@@ -169,7 +169,10 @@ def motion_history(
     timeout = float(timeout_val)  # type: ignore[arg-type]
     config_path = grand_state.get("config_path")
     credential_source = grand_state.get("credential_source")
-    concurrency = grand_state.get("concurrency")
+    concurrency_raw = grand_state.get("concurrency")
+    concurrency: int | None = (
+        concurrency_raw if isinstance(concurrency_raw, int) else None
+    )
 
     rc = _run_async(
         lambda: _run_history(
