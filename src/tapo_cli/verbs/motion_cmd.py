@@ -169,6 +169,7 @@ def motion_history(
     timeout = float(timeout_val)  # type: ignore[arg-type]
     config_path = grand_state.get("config_path")
     credential_source = grand_state.get("credential_source")
+    concurrency = grand_state.get("concurrency")
 
     rc = _run_async(
         lambda: _run_history(
@@ -180,6 +181,7 @@ def motion_history(
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -200,6 +202,7 @@ def _run_simple(ctx: click.Context, *, action: str) -> None:
     timeout = float(parent_state.get("timeout") or 5.0)
     config_path = parent_state.get("config_path")
     credential_source = parent_state.get("credential_source")
+    concurrency = parent_state.get("concurrency")
 
     if action == "history-default":
         rc = _run_async(
@@ -212,6 +215,7 @@ def _run_simple(ctx: click.Context, *, action: str) -> None:
                 timeout=timeout,
                 config_path=config_path,
                 credential_source=credential_source,
+                concurrency=concurrency,
             ),
             mode=mode,
         )
@@ -225,6 +229,7 @@ def _run_simple(ctx: click.Context, *, action: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -239,10 +244,57 @@ async def _run_simple_async(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_motion_simple(
+                alias=alias,
+                action=action,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_motion_simple(
+        alias=target,
+        action=action,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_motion_simple(
+    *,
+    alias: str,
+    action: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -268,9 +320,7 @@ async def _run_simple_async(
     }
     if sensitivity is not None:
         record["sensitivity"] = sensitivity
-
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return record
 
 
 # ---------------------------------------------------------------------------
@@ -288,14 +338,13 @@ async def _run_history(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
     if limit <= 0:
         raise UsageError(
             f"--limit must be positive, got {limit}",
             hint="Pass a value >= 1.",
         )
-
-    from tapo_cli import wrapper as wrap
 
     # Parse --since BEFORE we open a connection — bad input is a usage error
     # and shouldn't tie up the camera.
@@ -308,7 +357,64 @@ async def _run_history(
             _emit_history(items=[], mode=mode)
             return EXIT_SUCCESS
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            items = await _execute_history(
+                alias=alias,
+                since_epoch=since_epoch,
+                event_type_filter=event_type_filter,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+                limit=limit,
+                now_epoch=now_epoch,
+            )
+            return 0, {"target": alias, "events": items, "count": len(items)}
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    items = await _execute_history(
+        alias=target,
+        since_epoch=since_epoch,
+        event_type_filter=event_type_filter,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+        limit=limit,
+        now_epoch=now_epoch,
+    )
+    _emit_history(items=items, mode=mode)
+    return EXIT_SUCCESS
+
+
+async def _execute_history(
+    *,
+    alias: str,
+    since_epoch: float | None,
+    event_type_filter: str | None,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+    limit: int,
+    now_epoch: float,
+) -> list[dict[str, object]]:
+    from tapo_cli import wrapper as wrap
+
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -316,9 +422,6 @@ async def _run_history(
         timeout=timeout,
     )
 
-    # Pytapo's getEvents() defaults to "last 10 minutes" when called with
-    # no args. To satisfy FR-25's "default --since is 24h ago" we pass an
-    # explicit start_time epoch.
     default_window_seconds = 24 * 3600
     if since_epoch is not None:
         start_arg: float = since_epoch
@@ -330,11 +433,6 @@ async def _run_history(
             _call_get_events, conn.tapo, start_arg
         )
     except Exception as exc:
-        # Common Tapo firmware response: -71112 = playback (SD-card) feature
-        # not available on this device / not provisioned. Translate to a
-        # clearer "no events recorded" outcome — exit 0 with empty array
-        # is the right shape because a future SD-card insert would simply
-        # start populating events; nothing about the verb call was wrong.
         msg = str(exc)
         if "-71112" in msg or "playback" in msg.lower():
             logger.info(
@@ -342,8 +440,7 @@ async def _run_history(
                 "available (%s); emitting empty result",
                 msg,
             )
-            _emit_history(items=[], mode=mode)
-            return EXIT_SUCCESS
+            return []
         raise
     items = _project_events(
         raw_events,
@@ -354,8 +451,7 @@ async def _run_history(
     items.sort(key=lambda r: str(r.get("ts", "")))
     if limit > 0:
         items = items[:limit]
-    _emit_history(items=items, mode=mode)
-    return EXIT_SUCCESS
+    return items
 
 
 def _call_get_events(tapo: Any, start_time: float) -> list[Any]:

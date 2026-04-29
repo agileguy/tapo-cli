@@ -8,6 +8,11 @@ Auth fallback (FR-CRED-8): the wrapper already attempts the camera-
 account credential first and falls back to cloud-account on
 ``_AUTH_FAILED``, emitting the FR-CRED-8.1 deprecation WARN. Two
 consecutive auth failures bubble up as :class:`AuthError` (exit 2).
+
+Group fan-out (FR-43d, FR-56): when ``target`` is a configured ``@group``,
+expand to per-member fan-out via :mod:`tapo_cli.verbs._fanout` with the
+B10 envelope. Phase 4a generalizes the contract; before Phase 4a only
+``ptz`` honored ``@group``.
 """
 
 from __future__ import annotations
@@ -44,12 +49,13 @@ logger = logging.getLogger("tapo_cli")
 @click.argument("target", type=str)
 @click.pass_context
 def info_cmd(ctx: click.Context, target: str) -> None:
-    """Show full state of one camera."""
+    """Show full state of one camera (or every member of an @group)."""
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -58,6 +64,7 @@ def info_cmd(ctx: click.Context, target: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -71,29 +78,75 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
     from pathlib import Path
 
-    from tapo_cli import wrapper as wrap
-
-    # FR-39 target syntax: aliases, ``@alias``, or bare IPs are all
-    # acceptable here. The wrapper rejects ``@alias`` (group syntax) so
-    # info-on-a-group is a config-layer error today; for now we strip the
-    # ``@`` and treat it as a single alias to keep parity with kasa-cli.
-    resolved_target = target.lstrip("@") or target
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
 
     cfg_path = Path(str(config_path)).expanduser() if config_path else None
     cfg = load_config(cfg_path)
 
-    # If the target isn't a known alias but looks like an IP, synthesize a
-    # one-off DeviceEntry so the wrapper can resolve it (Phase 1b allowance
-    # — bare-IP targeting needs discover-side support to learn the MAC and
-    # this is the one place we can plant it).
-    cfg = _ensure_target_resolvable(cfg, resolved_target)
+    # FR-43d / FR-56: group fan-out for @group targets.
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, Any]]:
+            camera = await _execute_info(
+                alias=alias,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, _camera_to_dict(camera)
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    # Single-target path (FR-9 / unchanged Phase 1b shape). Aliases,
+    # ``@alias``, or bare IPs all acceptable; the leading ``@`` is stripped
+    # if the bare token isn't itself a configured group name.
+    record = await _execute_info(
+        alias=target.lstrip("@") or target,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_camera_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_info(
+    *,
+    alias: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> Camera:
+    """Run one ``info`` op against ``alias`` and return the §10.1 Camera record.
+
+    Pulled out of :func:`_run` so the fan-out helper can reuse it
+    per-member without the emit step.
+    """
+    from pathlib import Path
+
+    from tapo_cli import wrapper as wrap
+
+    cfg_path = Path(str(config_path)).expanduser() if config_path else None
+    cfg = load_config(cfg_path)
+    cfg = _ensure_target_resolvable(cfg, alias)
 
     conn = await wrap.connect(
         cfg,
-        resolved_target,
+        alias,
         credential_source=credential_source,  # type: ignore[arg-type]
         timeout=timeout,
     )
@@ -106,7 +159,7 @@ async def _run(
     info = flatten_basic_info(raw)
 
     model = first_str(info, "device_model", "model", "device_type")
-    record = Camera(
+    return Camera(
         alias=conn.target.alias,
         ip=conn.target.ip,
         mac=format_mac(info.get("mac") or conn.target.mac or ""),
@@ -123,8 +176,25 @@ async def _run(
         features=features_for_model(model),
     )
 
-    emit(record, mode, formatter=_camera_to_text)
-    return EXIT_SUCCESS
+
+def _camera_to_dict(camera: Camera) -> dict[str, Any]:
+    """Project a :class:`Camera` dataclass onto a plain dict for JSONL fan-out."""
+    return {
+        "alias": camera.alias,
+        "ip": camera.ip,
+        "mac": camera.mac,
+        "model": camera.model,
+        "hardware_version": camera.hardware_version,
+        "firmware_version": camera.firmware_version,
+        "supported": camera.supported,
+        "motion_enabled": camera.motion_enabled,
+        "privacy_enabled": camera.privacy_enabled,
+        "led_state": camera.led_state,
+        "night_vision_mode": camera.night_vision_mode,
+        "has_camera_account": camera.has_camera_account,
+        "last_seen": camera.last_seen,
+        "features": list(camera.features),
+    }
 
 
 def _ensure_target_resolvable(cfg: Config, target: str) -> Config:

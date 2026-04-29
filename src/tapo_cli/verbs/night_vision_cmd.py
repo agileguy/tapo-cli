@@ -70,12 +70,17 @@ _MODE_TO_PYTAPO: dict[str, str] = {
 )
 @click.pass_context
 def night_vision_cmd(ctx: click.Context, target: str, action: str) -> None:
-    """Set the camera's night-vision mode, or report it."""
+    """Set the camera's night-vision mode, or report it.
+
+    Group fan-out (FR-43d): ``@group`` targets fan out per-camera with
+    the standard B10 envelope.
+    """
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
     rc = _run_async(
         lambda: _run(
@@ -85,6 +90,7 @@ def night_vision_cmd(ctx: click.Context, target: str, action: str) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -99,10 +105,57 @@ async def _run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_night_vision(
+                alias=alias,
+                action=action,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    record = await _execute_night_vision(
+        alias=target,
+        action=action,
+        config_path=config_path,
+        credential_source=credential_source,
+        timeout=timeout,
+    )
+    emit(record, mode, formatter=_to_text)
+    return EXIT_SUCCESS
+
+
+async def _execute_night_vision(
+    *,
+    alias: str,
+    action: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
     from tapo_cli import wrapper as wrap
 
-    cfg, resolved_target = load_config_with_target(target, config_path)
+    cfg, resolved_target = load_config_with_target(alias, config_path)
     conn = await wrap.connect(
         cfg,
         resolved_target,
@@ -115,15 +168,9 @@ async def _run(
     else:
         wire = _MODE_TO_PYTAPO[action]
         await asyncio.to_thread(conn.tapo.setDayNightMode, wire)
-        # Echo back the *requested* sub-verb so tooling knows whether the
-        # operator asked for ``ir-only`` (a CLI carve-out) vs ``on`` even
-        # though both produce the same on-device state. This is the same
-        # contract kasa-cli's color verbs honor.
         reported_mode = action
 
-    record = {"target": conn.target.alias, "night_vision_mode": reported_mode}
-    emit(record, mode, formatter=_to_text)
-    return EXIT_SUCCESS
+    return {"target": conn.target.alias, "night_vision_mode": reported_mode}
 
 
 def _read_mode(tapo: Any) -> str:
