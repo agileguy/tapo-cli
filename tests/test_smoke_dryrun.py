@@ -113,9 +113,8 @@ def test_one_mechanism_failure_does_not_abort_others(smoke, monkeypatch, tmp_pat
         )
 
     async def fake_stream(_c):
-        return (
-            smoke.MechanismResult(name="pytapo_getStreamURL", status="fail", detail="simulated"),
-            None,
+        return smoke.MechanismResult(
+            name="pytapo_getStreamURL", status="fail", detail="simulated"
         )
 
     async def fake_native(_c, _raw):
@@ -138,8 +137,8 @@ def test_one_mechanism_failure_does_not_abort_others(smoke, monkeypatch, tmp_pat
     monkeypatch.setattr(
         smoke,
         "probe_ffmpeg_rtsp",
-        lambda c, url, raw: smoke.MechanismResult(
-            name="ffmpeg_rtsp_frame", status="fail", detail="no rtsp url"
+        lambda c, raw: smoke.MechanismResult(
+            name="ffmpeg_rtsp_frame", status="fail", detail="ffmpeg simulated fail"
         ),
     )
 
@@ -313,10 +312,14 @@ def test_ffmpeg_failure_masks_credentials_in_stderr_tail(smoke, monkeypatch, tmp
 
     monkeypatch.setattr(smoke.subprocess, "run", lambda *a, **kw: FakeCompleted())
 
-    cam = {"alias": "c1", "ip": "192.0.2.10", "model": "C320WS", "username": "u", "password": "p"}
-    result = smoke.probe_ffmpeg_rtsp(
-        cam, "rtsp://admin:hunter2@192.0.2.10/stream1", tmp_path
-    )
+    cam = {
+        "alias": "c1",
+        "ip": "192.0.2.10",
+        "model": "C320WS",
+        "username": "admin",
+        "password": "hunter2",
+    }
+    result = smoke.probe_ffmpeg_rtsp(cam, tmp_path)
     assert result.status == "fail"
     assert "hunter2" not in (result.detail or "")
     assert "***:***" in (result.detail or "")
@@ -328,7 +331,7 @@ def test_ffmpeg_not_on_path_reports_clean(smoke, monkeypatch, tmp_path):
 
     monkeypatch.setattr(smoke.subprocess, "run", raise_fnf)
     cam = {"alias": "c1", "ip": "192.0.2.10", "model": "C320WS", "username": "u", "password": "p"}
-    result = smoke.probe_ffmpeg_rtsp(cam, "rtsp://x:y@host/s", tmp_path)
+    result = smoke.probe_ffmpeg_rtsp(cam, tmp_path)
     assert result.status == "fail"
     assert "ffmpeg not on PATH" in (result.detail or "")
 

@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import click
 
@@ -61,6 +62,22 @@ _AUTH_RE = re.compile(r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*://)[^/@\s]+:[^/@\s]+@
 def mask_url_credentials(value: str) -> str:
     """Replace any ``scheme://user:pass@host`` payload with ``scheme://***:***@host``."""
     return _AUTH_RE.sub(lambda m: f"{m.group('scheme')}***:***@", value)
+
+
+def build_rtsp_url(
+    ip: str, username: str, password: str, port: int = 554, path: str = "stream1"
+) -> str:
+    """Construct an RTSP URL ffmpeg can consume directly.
+
+    pytapo's ``getStreamURL()`` at the pinned SHA returns just a peer
+    ``host:port`` (e.g. ``192.168.86.65:8800``) — *not* a full
+    ``rtsp://user:pass@host:554/stream1`` URL. Tier 7 (ffmpeg) needs the full
+    URL, so we build it from camera config rather than threading pytapo's
+    return value through. ``urllib.parse.quote`` with ``safe=''`` percent-
+    encodes ``@``, ``:``, ``/``, ``!``, ``?``, ``#`` and other reserved
+    characters that may appear in passwords.
+    """
+    return f"rtsp://{quote(username, safe='')}:{quote(password, safe='')}@{ip}:{port}/{path}"
 
 
 def resolve_onvif_wsdl_dir() -> Path:
@@ -150,16 +167,6 @@ def load_config(path: Path) -> list[dict[str, Any]]:
     return data
 
 
-def _timed(fn):
-    """Run ``fn``, return (result-or-exception, elapsed_ms)."""
-    start = time.perf_counter()
-    try:
-        result = fn()
-    except Exception as exc:
-        return exc, (time.perf_counter() - start) * 1000.0
-    return result, (time.perf_counter() - start) * 1000.0
-
-
 async def _atimed(coro):
     start = time.perf_counter()
     try:
@@ -195,8 +202,13 @@ async def probe_pytapo_basic_info(cam: dict[str, Any]) -> MechanismResult:
     )
 
 
-async def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult, str | None]:
-    """Returns (result, raw_rtsp_url-or-None). Raw URL stays in-process; never printed."""
+async def probe_pytapo_stream_url(cam: dict[str, Any]) -> MechanismResult:
+    """Report what pytapo's ``getStreamURL()`` returns — informational only.
+
+    On the pinned SHA this is a bare peer ``host:port`` string (e.g.
+    ``192.168.86.65:8800``), not a usable RTSP URL. The ffmpeg tier (g)
+    builds its own RTSP URL via ``build_rtsp_url`` from the camera config.
+    """
     from pytapo import Tapo
 
     def _run() -> str:
@@ -205,33 +217,24 @@ async def probe_pytapo_stream_url(cam: dict[str, Any]) -> tuple[MechanismResult,
 
     out, elapsed = await _atimed(asyncio.to_thread(_run))
     if isinstance(out, Exception):
-        return (
-            MechanismResult(
-                name="pytapo_getStreamURL",
-                status="fail",
-                elapsed_ms=elapsed,
-                detail=f"{type(out).__name__}: {out}",
-            ),
-            None,
+        return MechanismResult(
+            name="pytapo_getStreamURL",
+            status="fail",
+            elapsed_ms=elapsed,
+            detail=f"{type(out).__name__}: {out}",
         )
     if not isinstance(out, str) or not out:
-        return (
-            MechanismResult(
-                name="pytapo_getStreamURL",
-                status="fail",
-                elapsed_ms=elapsed,
-                detail=f"unexpected return type: {type(out).__name__}",
-            ),
-            None,
-        )
-    return (
-        MechanismResult(
+        return MechanismResult(
             name="pytapo_getStreamURL",
-            status="pass",
+            status="fail",
             elapsed_ms=elapsed,
-            detail=f"url present (masked): {mask_url_credentials(out)}",
-        ),
-        out,
+            detail=f"unexpected return type: {type(out).__name__}",
+        )
+    return MechanismResult(
+        name="pytapo_getStreamURL",
+        status="pass",
+        elapsed_ms=elapsed,
+        detail=f"pytapo returned (masked): {mask_url_credentials(out)}",
     )
 
 
@@ -461,20 +464,30 @@ async def probe_onvif(cam: dict[str, Any], raw_dir: Path) -> list[MechanismResul
     return results
 
 
-def probe_ffmpeg_rtsp(cam: dict[str, Any], rtsp_url: str | None, raw_dir: Path) -> MechanismResult:
+def probe_ffmpeg_rtsp(cam: dict[str, Any], raw_dir: Path) -> MechanismResult:
     """Pull a single frame from RTSP via ffmpeg subprocess.
 
-    ``rtsp_url`` is the credentialed URL from pytapo's ``getStreamURL`` and is
-    only ever passed to subprocess on argv — it is never logged or echoed.
+    Build the credentialed URL locally via ``build_rtsp_url``; do *not* depend
+    on pytapo's ``getStreamURL()`` (which on the pinned SHA returns a bare
+    ``host:port`` peer address, not a usable URL). The credentialed URL is
+    only ever passed to subprocess on argv — never logged or echoed.
+
+    ``-update 1`` is required under ffmpeg 8.x to write a single frame to a
+    non-pattern path without warning. ``-rtsp_transport tcp`` avoids UDP
+    packet-loss flakes that would make the smoke gate non-deterministic.
     """
-    if rtsp_url is None:
-        return MechanismResult(
-            name="ffmpeg_rtsp_frame",
-            status="fail",
-            detail="no RTSP URL available (pytapo_getStreamURL did not pass)",
-        )
+    rtsp_url = build_rtsp_url(cam["ip"], cam["username"], cam["password"])
     out_jpeg = raw_dir / f"{cam['alias']}-ffmpeg.jpg"
-    cmd = ["ffmpeg", "-y", "-i", rtsp_url, "-frames:v", "1", "-f", "image2", str(out_jpeg)]
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-rtsp_transport", "tcp",
+        "-i", rtsp_url,
+        "-frames:v", "1",
+        "-update", "1",
+        "-f", "image2",
+        str(out_jpeg),
+    ]
     start = time.perf_counter()
     try:
         proc = subprocess.run(
@@ -519,9 +532,8 @@ async def run_camera(cam: dict[str, Any], raw_dir: Path) -> CameraResult:
     # (a) pytapo getBasicInfo
     result.mechanisms.append(await probe_pytapo_basic_info(cam))
 
-    # (b) pytapo getStreamURL — keeps raw URL in-process for tier (g).
-    stream_result, rtsp_url = await probe_pytapo_stream_url(cam)
-    result.mechanisms.append(stream_result)
+    # (b) pytapo getStreamURL — informational only; tier (g) builds its own URL.
+    result.mechanisms.append(await probe_pytapo_stream_url(cam))
 
     # (c) pytapo native snapshot — best-effort.
     result.mechanisms.append(await probe_pytapo_native_snapshot(cam, raw_dir))
@@ -529,8 +541,8 @@ async def run_camera(cam: dict[str, Any], raw_dir: Path) -> CameraResult:
     # (d, e, f) ONVIF mechanisms.
     result.mechanisms.extend(await probe_onvif(cam, raw_dir))
 
-    # (g) ffmpeg single-frame from RTSP.
-    result.mechanisms.append(probe_ffmpeg_rtsp(cam, rtsp_url, raw_dir))
+    # (g) ffmpeg single-frame from RTSP. URL built from camera config.
+    result.mechanisms.append(probe_ffmpeg_rtsp(cam, raw_dir))
 
     return result
 
