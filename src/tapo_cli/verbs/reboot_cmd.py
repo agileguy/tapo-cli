@@ -55,16 +55,24 @@ logger = logging.getLogger("tapo_cli")
 )
 @click.pass_context
 def reboot_cmd(ctx: click.Context, target: str, yes_flag: bool) -> None:
-    """Reboot the camera. Prompts on tty; non-tty requires --yes."""
+    """Reboot the camera (or every member of an @group).
+
+    FR-38 single-target confirmation: tty mode prompts on stderr; non-tty
+    requires ``--yes``. ``--quiet`` implies ``--yes``.
+
+    FR-43e group confirmation: ``reboot @group`` applies the FR-38 rules
+    at the group level — one prompt naming the resolved member list, NOT
+    one prompt per camera. ``--yes`` / ``--quiet`` short-circuit the
+    prompt; the per-camera fan-out then proceeds with no further prompts.
+    """
     state = ctx.obj
     mode: OutputMode = state["mode"]
     timeout = float(state.get("timeout") or 5.0)
     config_path = state.get("config_path")
     credential_source = state.get("credential_source")
+    concurrency = state.get("concurrency")
 
-    # FR-38: --quiet implies --yes (a quiet caller has signalled intent
-    # to proceed without prompts; the alternative — silently failing on a
-    # missing --yes — is the worst possible UX).
+    # FR-38 / FR-43e: --quiet implies --yes.
     yes_effective = yes_flag or (mode is OutputMode.QUIET)
 
     rc = _run_async(
@@ -75,6 +83,7 @@ def reboot_cmd(ctx: click.Context, target: str, yes_flag: bool) -> None:
             timeout=timeout,
             config_path=config_path,
             credential_source=credential_source,
+            concurrency=concurrency,
         ),
         mode=mode,
     )
@@ -89,12 +98,45 @@ async def _confirm_then_run(
     timeout: float,
     config_path: object,
     credential_source: object,
+    concurrency: int | None = None,
 ) -> int:
-    """Run the confirmation gate, then dispatch to the reboot RPC."""
+    """Run the confirmation gate, then dispatch to the reboot RPC.
+
+    FR-43e: detect ``@group`` BEFORE prompting so the prompt names the
+    group members. Then fan out (no per-camera prompts).
+    """
+    from tapo_cli.verbs._fanout import (
+        group_members,
+        is_group_target,
+        run_fanout,
+    )
+
+    cfg, _ = load_config_with_target(target, config_path)
+
+    if is_group_target(target, cfg):
+        members = group_members(target, cfg)
+        if not _confirm_or_fail_group(yes=yes, target=target, members=members):
+            return EXIT_SUCCESS
+
+        async def _per_target(alias: str) -> tuple[int, dict[str, object]]:
+            record = await _execute_reboot(
+                alias=alias,
+                config_path=config_path,
+                credential_source=credential_source,
+                timeout=timeout,
+            )
+            return 0, record
+
+        return await run_fanout(
+            members=members,
+            per_target=_per_target,
+            concurrency=concurrency or cfg.defaults.concurrency,
+            mode=mode,
+        )
+
+    # Single-target path (unchanged FR-38 contract).
     confirmed = _confirm_or_fail(yes=yes)
     if not confirmed:
-        # tty user typed N (or hit enter for the default). Exit cleanly
-        # with no action emitted — operator chose not to reboot.
         return EXIT_SUCCESS
 
     return await _run(
@@ -104,6 +146,60 @@ async def _confirm_then_run(
         config_path=config_path,
         credential_source=credential_source,
     )
+
+
+def _confirm_or_fail_group(
+    *, yes: bool, target: str, members: list[str]
+) -> bool:
+    """FR-43e group-level confirmation gate. ``--yes`` skips; tty prompts; non-tty exits 64.
+
+    The prompt names the group, enumerates the resolved member aliases on
+    stderr, and reads y/N. Anything other than y / yes is treated as a
+    decline (returns False).
+    """
+    if yes:
+        return True
+
+    if not _is_interactive_tty():
+        raise UsageError(
+            f"reboot {target!r} requires --yes when stdin/stderr is not a tty",
+            hint=(
+                "Group reboot is destructive across multiple cameras. Pass "
+                "--yes (or --quiet, which implies --yes) to confirm."
+            ),
+        )
+
+    member_list = ", ".join(members) if members else "(empty)"
+    sys.stderr.write(
+        f"About to reboot {len(members)} camera(s) in group "
+        f"{target.lstrip('@') or target!r}: {member_list}. Reboot? [y/N] "
+    )
+    sys.stderr.flush()
+    try:
+        response = sys.stdin.readline()
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return response.strip().lower() in {"y", "yes"}
+
+
+async def _execute_reboot(
+    *,
+    alias: str,
+    config_path: object,
+    credential_source: object,
+    timeout: float,
+) -> dict[str, object]:
+    from tapo_cli import wrapper as wrap
+
+    cfg, resolved_target = load_config_with_target(alias, config_path)
+    conn = await wrap.connect(
+        cfg,
+        resolved_target,
+        credential_source=credential_source,  # type: ignore[arg-type]
+        timeout=timeout,
+    )
+    await asyncio.to_thread(_invoke_reboot, conn.tapo)
+    return {"target": conn.target.alias, "status": "reboot-issued"}
 
 
 def _is_interactive_tty() -> bool:
