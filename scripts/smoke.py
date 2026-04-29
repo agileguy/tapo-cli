@@ -63,6 +63,29 @@ def mask_url_credentials(value: str) -> str:
     return _AUTH_RE.sub(lambda m: f"{m.group('scheme')}***:***@", value)
 
 
+def resolve_onvif_wsdl_dir() -> Path:
+    """Resolve the on-disk path of the ONVIF WSDL bundle.
+
+    onvif-zeep-async 4.0.4 declares
+        _WSDL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "wsdl")
+    in onvif/client.py. From site-packages/onvif/client.py that resolves to
+    site-packages/wsdl — one directory shallower than the actual bundle, which
+    lives at site-packages/onvif/wsdl/. We resolve the correct directory at
+    runtime via the loaded onvif package's __file__ and pass it explicitly via
+    ONVIFCamera(..., wsdl_dir=...).
+    """
+    import onvif  # type: ignore[import-untyped]
+
+    pkg_dir = Path(onvif.__file__).resolve().parent
+    wsdl = pkg_dir / "wsdl"
+    if not wsdl.is_dir():
+        raise FileNotFoundError(
+            f"ONVIF unavailable — install or pin onvif-zeep-async correctly "
+            f"(expected wsdl/ directory at {wsdl})"
+        )
+    return wsdl
+
+
 @dataclass
 class MechanismResult:
     name: str
@@ -262,14 +285,24 @@ async def probe_pytapo_native_snapshot(cam: dict[str, Any], raw_dir: Path) -> Me
 
 async def probe_onvif(cam: dict[str, Any], raw_dir: Path) -> list[MechanismResult]:
     """Run the three ONVIF mechanisms (d, e, f) sequentially; isolate failures."""
+    try:
+        wsdl_dir = resolve_onvif_wsdl_dir()
+    except FileNotFoundError as exc:
+        return [
+            MechanismResult(name=name, status="fail", detail=str(exc))
+            for name in ("onvif_GetDeviceInformation", "onvif_GetProfiles", "onvif_GetSnapshotUri")
+        ]
+
     from onvif import ONVIFCamera  # type: ignore[import-untyped]
 
     onvif_port = int(cam.get("onvif_port", 2020))
     results: list[MechanismResult] = []
-    onvif: Any = None
+    onvif_cam: Any = None
 
     async def _connect() -> Any:
-        c = ONVIFCamera(cam["ip"], onvif_port, cam["username"], cam["password"])
+        c = ONVIFCamera(
+            cam["ip"], onvif_port, cam["username"], cam["password"], wsdl_dir=str(wsdl_dir)
+        )
         await c.update_xaddrs()
         return c
 
@@ -290,10 +323,11 @@ async def probe_onvif(cam: dict[str, Any], raw_dir: Path) -> list[MechanismResul
                 MechanismResult(name=name, status="fail", detail="onvif connect failed upstream")
             )
         return results
-    onvif = out
+    onvif_cam = out
 
     async def _device_info() -> Any:
-        return await onvif.devicemgmt.GetDeviceInformation()
+        dm = await onvif_cam.create_devicemgmt_service()
+        return await dm.GetDeviceInformation()
 
     out, elapsed = await _atimed(_device_info())
     if isinstance(out, Exception):
@@ -318,7 +352,7 @@ async def probe_onvif(cam: dict[str, Any], raw_dir: Path) -> list[MechanismResul
         )
 
     # (e) GetProfiles
-    media = await onvif.create_media_service()
+    media = await onvif_cam.create_media_service()
 
     async def _profiles() -> Any:
         return await media.GetProfiles()
