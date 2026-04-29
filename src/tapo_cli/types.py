@@ -72,6 +72,42 @@ class MotionEvent:
 
 
 @dataclass(slots=True)
+class Event:
+    """One push-emitted event from an ONVIF Profile-S PullPointSubscription
+    (SRD §10.6, Phase 4b).
+
+    Identical in shape to :class:`MotionEvent` modulo the constant
+    ``source: "onvif"`` field that distinguishes push (``events --follow``)
+    from pull (``motion history``, source ``"pytapo"``). Operators MAY merge
+    the two JSONL streams and dedupe on ``(target, ts, event_type)``.
+    """
+
+    ts: str
+    """RFC 3339 UTC string with literal 'Z' suffix; derived from the
+    NotificationMessage envelope's ``UtcTime`` (FR-62, §7.2)."""
+
+    target: str
+    """Alias as resolved from the verb invocation."""
+
+    event_type: EventType
+    """SRD §10.6 closed enum: motion | person | vehicle | doorbell-press
+    | unknown. Projected from the ONVIF Topic on the message envelope."""
+
+    has_clip: bool
+    """True iff a recent SD-card recording falls within ±5s of ``ts``.
+    Default is False (the safe default if the camera lacks SD-card metadata
+    or pytapo's ``getRecordings()`` is unavailable)."""
+
+    region: str | None = None
+    """Device-specific region label (often "full"); ``None`` when the ONVIF
+    notification does not carry one."""
+
+    source: Literal["onvif"] = "onvif"
+    """Constant; FR-62 invariant — distinguishes ``events`` push from
+    ``motion history`` pull."""
+
+
+@dataclass(slots=True)
 class Preset:
     """Saved PTZ preset (SRD §10.4). Phase 1d."""
 
@@ -133,6 +169,7 @@ class ResolvedCredential:
 
 __all__ = [
     "Camera",
+    "Event",
     "EventType",
     "LedState",
     "MotionEvent",
