@@ -30,7 +30,12 @@ from tapo_cli.verbs.auth_cmd import auth_group
 from tapo_cli.verbs.config_cmd import config_group
 from tapo_cli.verbs.discover_cmd import discover_cmd
 from tapo_cli.verbs.info_cmd import info_cmd
+from tapo_cli.verbs.led_cmd import led_cmd
 from tapo_cli.verbs.list_cmd import list_cmd
+from tapo_cli.verbs.motion_cmd import motion_cmd
+from tapo_cli.verbs.night_vision_cmd import night_vision_cmd
+from tapo_cli.verbs.privacy_cmd import privacy_cmd
+from tapo_cli.verbs.reboot_cmd import reboot_cmd
 from tapo_cli.verbs.snapshot_cmd import snapshot_cmd
 from tapo_cli.verbs.stream_cmd import stream_cmd
 
@@ -164,6 +169,11 @@ main.add_command(list_cmd)
 main.add_command(info_cmd)
 main.add_command(snapshot_cmd)
 main.add_command(stream_cmd)
+main.add_command(privacy_cmd)
+main.add_command(led_cmd)
+main.add_command(night_vision_cmd)
+main.add_command(motion_cmd)
+main.add_command(reboot_cmd)
 
 
 # Re-export the runner under its old name for any downstream call site that
