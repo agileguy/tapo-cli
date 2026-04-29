@@ -333,30 +333,37 @@ async def _tier2_onvif(
         from onvif import ONVIFCamera  # type: ignore[import-untyped]
 
         cam = ONVIFCamera(ip, onvif_port, username, password, wsdl_dir=str(wsdl_dir))
-        await cam.update_xaddrs()
-        media = await cam.create_media_service()
-        profiles = await media.GetProfiles()
-        if not profiles:
-            raise RuntimeError("GetProfiles returned empty list")
-        token = getattr(profiles[0], "token", None)
-        if not token:
-            raise RuntimeError("first profile has no token")
-        snap = await media.GetSnapshotUri({"ProfileToken": token})
-        uri = getattr(snap, "Uri", None)
-        if not uri:
-            raise RuntimeError("GetSnapshotUri returned empty Uri")
+        try:
+            await cam.update_xaddrs()
+            media = await cam.create_media_service()
+            profiles = await media.GetProfiles()
+            if not profiles:
+                raise RuntimeError("GetProfiles returned empty list")
+            token = getattr(profiles[0], "token", None)
+            if not token:
+                raise RuntimeError("first profile has no token")
+            snap = await media.GetSnapshotUri({"ProfileToken": token})
+            uri = getattr(snap, "Uri", None)
+            if not uri:
+                raise RuntimeError("GetSnapshotUri returned empty Uri")
 
-        import httpx
+            import httpx
 
-        async with httpx.AsyncClient(timeout=budget) as client:
-            resp = await client.get(uri, auth=(username, password))
-            if resp.status_code == 401:
-                raise _AuthRejectedError("onvif", "HTTP 401 on snapshot URI")
-            if resp.status_code != 200:
-                raise RuntimeError(
-                    f"snapshot URI returned HTTP {resp.status_code}"
-                )
-            return resp.content
+            async with httpx.AsyncClient(timeout=budget) as client:
+                resp = await client.get(uri, auth=(username, password))
+                if resp.status_code == 401:
+                    raise _AuthRejectedError("onvif", "HTTP 401 on snapshot URI")
+                if resp.status_code != 200:
+                    raise RuntimeError(
+                        f"snapshot URI returned HTTP {resp.status_code}"
+                    )
+                return resp.content
+        finally:
+            # onvif-zeep-async holds an internal aiohttp.ClientSession that
+            # spews "Unclosed client session" warnings if it's GC'd without
+            # cam.close(). Always close, even on the success path.
+            with contextlib.suppress(Exception):
+                await cam.close()
 
     try:
         payload = await asyncio.wait_for(_do(), timeout=budget)

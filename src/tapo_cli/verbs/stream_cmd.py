@@ -101,32 +101,41 @@ async def _fetch_onvif_profiles(
     from onvif import ONVIFCamera  # type: ignore[import-untyped]
 
     cam = ONVIFCamera(ip, port, username, password, wsdl_dir=str(wsdl_dir))
-    await asyncio.wait_for(cam.update_xaddrs(), timeout=timeout)
-    media = await cam.create_media_service()
-    profiles = await asyncio.wait_for(media.GetProfiles(), timeout=timeout)
+    try:
+        await asyncio.wait_for(cam.update_xaddrs(), timeout=timeout)
+        media = await cam.create_media_service()
+        profiles = await asyncio.wait_for(media.GetProfiles(), timeout=timeout)
 
-    out: list[dict[str, Any]] = []
-    for p in profiles:
-        name = getattr(p, "Name", None) or ""
-        token = getattr(p, "token", None) or ""
-        enc_cfg = getattr(p, "VideoEncoderConfiguration", None)
-        encoder = getattr(enc_cfg, "Encoding", "") if enc_cfg is not None else ""
-        resolution = ""
-        if enc_cfg is not None:
-            res = getattr(enc_cfg, "Resolution", None)
-            if res is not None:
-                w = getattr(res, "Width", "?")
-                h = getattr(res, "Height", "?")
-                resolution = f"{w}x{h}"
-        out.append(
-            {
-                "name": str(name),
-                "token": str(token),
-                "encoder": str(encoder),
-                "resolution": resolution,
-            }
-        )
-    return out
+        out: list[dict[str, Any]] = []
+        for p in profiles:
+            name = getattr(p, "Name", None) or ""
+            token = getattr(p, "token", None) or ""
+            enc_cfg = getattr(p, "VideoEncoderConfiguration", None)
+            encoder = (
+                getattr(enc_cfg, "Encoding", "") if enc_cfg is not None else ""
+            )
+            resolution = ""
+            if enc_cfg is not None:
+                res = getattr(enc_cfg, "Resolution", None)
+                if res is not None:
+                    w = getattr(res, "Width", "?")
+                    h = getattr(res, "Height", "?")
+                    resolution = f"{w}x{h}"
+            out.append(
+                {
+                    "name": str(name),
+                    "token": str(token),
+                    "encoder": str(encoder),
+                    "resolution": resolution,
+                }
+            )
+        return out
+    finally:
+        # See snapshot_cmd._tier2_onvif: zeep-async leaks aiohttp.ClientSession
+        # without cam.close().
+        import contextlib as _ctx  # local alias so the import doesn't pollute the module surface
+        with _ctx.suppress(Exception):
+            await cam.close()
 
 
 def _profile_to_stream_path(profile_name: str) -> str:
