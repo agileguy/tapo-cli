@@ -364,3 +364,182 @@ def test_load_config_accepts_optional_onvif_port(smoke, tmp_path):
     )
     cams = smoke.load_config(p)
     assert cams[0]["onvif_port"] == 8000
+
+
+# ─────────────────────── BUG 1: asyncio reentrancy ───────────────────────
+
+
+def test_pytapo_probe_does_not_collide_with_outer_event_loop(smoke, monkeypatch, tmp_path):
+    """Regression test for BUG 1.
+
+    Simulate pytapo's behaviour: a sync function that internally invokes
+    ``loop.run_until_complete()``. If the smoke probe calls it on the calling
+    thread instead of via ``asyncio.to_thread``, asyncio raises
+    ``RuntimeError: Cannot run the event loop while another loop is running``
+    because we're already inside ``asyncio.run``. The probe must isolate the
+    sync call onto a worker thread so this never happens.
+    """
+    import asyncio
+
+    def fake_basic_info() -> dict:
+        # Mimic pytapo.AsyncHandler: run a fresh loop inside a sync callable.
+        async def _inner() -> str:
+            await asyncio.sleep(0)
+            return "ok"
+
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(_inner())
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+        return {"device_info": {"basic_info": {"device_model": "C200"}}}
+
+    fake_tapo = type(
+        "FakeTapo",
+        (),
+        {
+            "__init__": lambda self, *a, **kw: None,
+            "getBasicInfo": lambda self: fake_basic_info(),
+        },
+    )
+
+    fake_module = types.ModuleType("pytapo")
+    fake_module.Tapo = fake_tapo  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "pytapo", fake_module)
+
+    cam = {"alias": "c1", "ip": "192.0.2.10", "model": "C200", "username": "u", "password": "p"}
+    # If the probe ran the sync call on the calling thread, this would raise.
+    result = asyncio.run(smoke.probe_pytapo_basic_info(cam))
+    assert result.status == "pass"
+    assert "device_model" in (result.detail or "")
+
+
+# ─────────────────────── BUG 2: ONVIF WSDL discovery ───────────────────────
+
+
+def test_resolve_onvif_wsdl_dir_raises_clearly_when_bundle_missing(
+    smoke, monkeypatch, tmp_path
+):
+    """Regression test for BUG 2.
+
+    If the onvif package is installed but the bundled wsdl/ directory is
+    missing (e.g. a packaging bug under Python 3.14), the resolver must
+    surface a clear, actionable 'install or pin onvif-zeep-async correctly'
+    message — not a cryptic FileNotFoundError that points at a stray
+    site-packages/wsdl/devicemgmt.wsdl path the user can't act on.
+    """
+    fake_onvif = types.ModuleType("onvif")
+    fake_onvif.__file__ = str(tmp_path / "onvif" / "__init__.py")  # bundle missing
+    (tmp_path / "onvif").mkdir()
+    monkeypatch.setitem(sys.modules, "onvif", fake_onvif)
+
+    with pytest.raises(FileNotFoundError) as excinfo:
+        smoke.resolve_onvif_wsdl_dir()
+    msg = str(excinfo.value)
+    assert "ONVIF unavailable" in msg
+    assert "onvif-zeep-async" in msg
+
+
+def test_probe_onvif_routes_missing_wsdl_to_clear_failure(smoke, monkeypatch, tmp_path):
+    """If the WSDL bundle is missing, all three ONVIF tiers must fail with the
+    same clear 'ONVIF unavailable — install or pin onvif-zeep-async correctly'
+    message rather than the upstream library's cryptic FileNotFoundError."""
+    import asyncio
+
+    def boom() -> Path:
+        raise FileNotFoundError("ONVIF unavailable — install or pin onvif-zeep-async correctly")
+
+    monkeypatch.setattr(smoke, "resolve_onvif_wsdl_dir", boom)
+
+    cam = {"alias": "c1", "ip": "192.0.2.10", "model": "C200", "username": "u", "password": "p"}
+    results = asyncio.run(smoke.probe_onvif(cam, tmp_path))
+    assert [r.name for r in results] == [
+        "onvif_GetDeviceInformation",
+        "onvif_GetProfiles",
+        "onvif_GetSnapshotUri",
+    ]
+    assert all(r.status == "fail" for r in results)
+    assert all("ONVIF unavailable" in (r.detail or "") for r in results)
+    assert all("onvif-zeep-async" in (r.detail or "") for r in results)
+
+
+# ─────────────────────── BUG 3: RTSP URL construction ───────────────────────
+
+
+@pytest.mark.parametrize(
+    "username,password",
+    [
+        ("admin", "p@ss:word"),       # @ and : in password
+        ("user/with/slash", "pass"),  # / in username
+        ("u", "with?query#hash"),     # ? and # in password
+        ("u", "bang!exclaim"),        # ! in password
+        ("u", "amp&pers"),            # & in password (URL query separator)
+        ("u", " spaces and ünïcödé"), # spaces and non-ASCII
+    ],
+)
+def test_build_rtsp_url_quotes_special_characters(smoke, username, password):
+    """Regression test for BUG 3.
+
+    Passwords containing URL-reserved characters (@, :, /, !, ?, #, &) must be
+    percent-encoded so they don't corrupt the userinfo / host / path / query
+    boundaries of the RTSP URL ffmpeg consumes.
+    """
+    from urllib.parse import quote, urlsplit
+
+    url = smoke.build_rtsp_url("192.0.2.10", username, password)
+    parts = urlsplit(url)
+
+    assert parts.scheme == "rtsp"
+    assert parts.hostname == "192.0.2.10"
+    assert parts.port == 554
+    assert parts.path == "/stream1"
+    # Reserved chars must be percent-encoded — never raw — in userinfo.
+    for raw in ("@", ":", "/", "?", "#", "&", "!"):
+        assert raw not in (parts.username or "")
+        # ':' inside password would split user:pass at the wrong place.
+        # urlsplit can still report the password if we encoded properly.
+    # Round-trip: urlsplit must be able to recover the originals.
+    assert parts.username == quote(username, safe="")
+    assert parts.password == quote(password, safe="")
+
+
+def test_build_rtsp_url_default_port_and_path(smoke):
+    url = smoke.build_rtsp_url("192.0.2.10", "u", "p")
+    assert url == "rtsp://u:p@192.0.2.10:554/stream1"
+
+
+def test_ffmpeg_probe_builds_url_locally_not_from_pytapo(smoke, monkeypatch, tmp_path):
+    """probe_ffmpeg_rtsp must build its RTSP URL from camera config — never
+    consume pytapo.getStreamURL()'s return value, which on the pinned SHA is
+    a bare host:port string, not a usable URL."""
+    captured: dict = {}
+
+    class FakeProc:
+        returncode = 0
+        stderr = b""
+
+    def fake_run(cmd, *_a, **_kw):
+        captured["cmd"] = cmd
+        # Simulate ffmpeg writing the JPEG so the success path returns pass.
+        out_path = Path(cmd[cmd.index("-f") + 2])
+        out_path.write_bytes(b"\xff\xd8\xff\xe0fake jpeg")
+        return FakeProc()
+
+    monkeypatch.setattr(smoke.subprocess, "run", fake_run)
+
+    cam = {
+        "alias": "c1",
+        "ip": "10.20.30.40",
+        "model": "C200",
+        "username": "user",
+        "password": "p@ss:word",
+    }
+    result = smoke.probe_ffmpeg_rtsp(cam, tmp_path)
+    assert result.status == "pass"
+    # The URL passed to ffmpeg was built from cam config, not pytapo, and the
+    # password's special characters were percent-encoded.
+    cmd = captured["cmd"]
+    rtsp_arg = cmd[cmd.index("-i") + 1]
+    assert rtsp_arg.startswith("rtsp://user:p%40ss%3Aword@10.20.30.40:554/stream1")
