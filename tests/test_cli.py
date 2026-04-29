@@ -55,10 +55,10 @@ def test_top_level_help_lists_phase_1cd_verbs() -> None:
         assert required in out, (
             f"Phase 2 CLI must list verb {required!r} in --help"
         )
-    # Phase 3+ camera verbs are still embargoed (record / batch land in Phase 3).
-    for forbidden in ("record", "batch"):
-        assert forbidden not in out, (
-            f"Phase 3+ verb {forbidden!r} must not appear yet"
+    # Phase 3: record / groups / batch verbs MUST be exposed.
+    for required in ("record", "groups", "batch"):
+        assert required in out, (
+            f"Phase 3 CLI must list verb {required!r} in --help"
         )
 
 
@@ -67,7 +67,7 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.2.0"
+    assert PACKAGE_VERSION == "0.3.0"
 
 
 def test_auth_help_lists_three_actions() -> None:
