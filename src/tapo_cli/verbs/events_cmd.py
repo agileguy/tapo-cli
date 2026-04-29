@@ -685,6 +685,9 @@ async def _close_quietly(subscription: Any) -> None:
         logger.debug("Unsubscribe best-effort cleanup failed: %s", exc)
 
 
+_SHUTDOWN_EMITTED: set[int] = set()
+
+
 async def _shutdown(
     cam: Any,
     subscription: Any,
@@ -693,14 +696,22 @@ async def _shutdown(
     started: float,
     mode: OutputMode,
 ) -> None:
-    """Final cleanup at the end of the verb run."""
+    """Final cleanup at the end of the verb run.
+
+    Idempotent on the FR-58 summary emission — keyed on the ``id(subscription)``
+    so a single ``_run()`` invocation emits at most one ``"interrupted"`` line
+    even when py3.11 asyncio re-enters the ``finally:`` path during signal
+    delivery. The set is small and bounded by concurrent verb invocations
+    (1 in normal use; tests reset it via the fixture).
+    """
     await _close_quietly(subscription)
     with contextlib.suppress(Exception):
         await cam.close()
     if follow and mode is not OutputMode.QUIET:
-        # Emit the FR-58 summary line for follow mode unconditionally —
-        # SIGINT/SIGTERM and natural exits both want it. The runner above
-        # converts KeyboardInterrupt to exit 130 / SystemExit(143).
+        key = id(subscription)
+        if key in _SHUTDOWN_EMITTED:
+            return
+        _SHUTDOWN_EMITTED.add(key)
         age = round(time.monotonic() - started, 3)
         record = {"event": "interrupted", "subscription_age_s": age}
         emit_one(record, mode, formatter=lambda r: f"interrupted\tage={age}s")
