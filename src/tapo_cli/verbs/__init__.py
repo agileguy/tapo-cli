@@ -1,14 +1,15 @@
 """tapo-cli verbs.
 
-Phase 1a ships only the meta verbs (``auth``, ``config``); the actual camera
-verbs land in later phases:
+Phase progression:
 
-* Phase 1b: ``discover``, ``list``, ``info``
-* Phase 1c: ``snapshot``, ``stream``, ``record``
-* Phase 1d: ``ptz``, ``preset``, ``motion``, ``alarm``, ``led``, ``privacy``,
-  ``night-vision``, ``audio``, ``osd``, ``set``, ``reboot``, ``groups``,
-  ``batch``
+* Phase 1a: ``auth``, ``config`` (meta verbs).
+* Phase 1b: ``discover``, ``list``, ``info``.
+* Phase 1c: ``snapshot``, ``stream``, ``record`` (parallel branch).
+* Phase 1d: ``privacy``, ``led``, ``night-vision``, ``motion``, ``reboot``.
+* Phase 2+: ``ptz``, ``preset``, ``alarm``, ``audio``, ``osd``, ``set``,
+  ``groups``, ``batch``, motion ``history``.
 
-Camera verbs are intentionally NOT importable from here yet — see
-``cli.py`` and the wrapper module for the in-progress contracts.
+Phase 1d state-control verbs are surfaced through :mod:`tapo_cli.cli`;
+the per-verb modules live in this package as ``privacy_cmd``,
+``led_cmd``, ``night_vision_cmd``, ``motion_cmd``, ``reboot_cmd``.
 """
