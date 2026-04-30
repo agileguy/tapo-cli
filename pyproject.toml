@@ -1,6 +1,6 @@
 [project]
 name = "tapo-cli"
-version = "0.4.0"
+version = "0.4.1"
 description = "Deterministic local-LAN CLI for TP-Link Tapo cameras and doorbells"
 readme = "README.md"
 license = { text = "MIT" }
@@ -31,6 +31,7 @@ dependencies = [
   "WSDiscovery>=2.1.2,<3",
   "click>=8.1",
   "httpx>=0.27",
+  "aiofiles>=25.1.0",
 ]
 
 [project.scripts]

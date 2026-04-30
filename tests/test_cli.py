@@ -75,7 +75,7 @@ def test_version_emits_package_version() -> None:
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
     assert PACKAGE_VERSION in result.output
-    assert PACKAGE_VERSION == "0.4.0"
+    assert PACKAGE_VERSION == "0.4.1"
 
 
 def test_set_help_lists_image_flip_and_timezone() -> None:
@@ -92,6 +92,25 @@ def test_motion_history_help_honors_event_type_filter() -> None:
     result = runner.invoke(main, ["motion", "history", "--help"])
     assert result.exit_code == 0
     assert "--event-type" in result.output
+
+
+def test_motion_help_lists_download_clip_subverb() -> None:
+    """Phase 4c: ``motion --help`` MUST advertise ``download-clip`` (FR-63)."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["motion", "--help"])
+    assert result.exit_code == 0
+    assert "download-clip" in result.output
+
+
+def test_motion_download_clip_help_advertises_experimental_flag() -> None:
+    """``motion download-clip --help`` MUST mention ``--experimental-clips``
+    (FR-63 — flag is required and the help is the operator's first contact
+    with the experimental-warning copy)."""
+    runner = CliRunner()
+    result = runner.invoke(main, ["motion", "download-clip", "--help"])
+    assert result.exit_code == 0
+    assert "--experimental-clips" in result.output
+    assert "--output" in result.output
 
 
 def test_auth_help_lists_three_actions() -> None:
